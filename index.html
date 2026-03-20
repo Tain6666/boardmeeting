@@ -370,7 +370,10 @@
             } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
         }
 
-        // --- Load User Meetings ---
+        // สร้างตัวแปรเก็บข้อมูลการประชุมไว้ให้ปุ่ม "ดูข้อมูล" เรียกใช้
+        window.userMeetingData = [];
+
+        // --- Load User Meetings (แก้ไขการแสดงเวลา, ลิงก์ปฏิทิน และเพิ่มปุ่มดูข้อมูล) ---
         async function loadUserMeetings(userName) {
             const container = document.getElementById('userSchedule');
             try {
@@ -380,30 +383,34 @@
                 }).then(r => r.json());
 
                 if (res.success && res.data.length > 0) {
+                    window.userMeetingData = res.data; // เก็บข้อมูลลงตัวแปร
                     let html = '';
-                    res.data.forEach(m => {
-                        // ปรับแต่งการสร้าง Link ลงปฏิทินให้ครอบคลุมเวลาสิ้นสุด
+                    
+                    res.data.forEach((m, index) => {
+                        // ปรับเวลาให้อยู่ในรูปแบบ HHMMSS เพื่อให้ Google Calendar รู้จัก
                         let sTime = m.startTime ? m.startTime.replace(':', '') + '00' : '000000';
                         let eTime = m.endTime ? m.endTime.replace(':', '') + '00' : sTime;
                         
                         const startDateTime = m.date.replace(/-/g, '') + 'T' + sTime;
                         const endDateTime = m.date.replace(/-/g, '') + 'T' + eTime;
-                        const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}`;
+                        // เพิ่ม ctz=Asia/Bangkok เพื่อให้โซนเวลาเป๊ะที่สุด
+                        const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}&ctz=Asia/Bangkok`;
 
                         html += `
                         <div class="p-5 hover:bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center border-b">
-                            <div class="w-full md:w-3/4">
+                            <div class="w-full md:w-2/3">
                                 <p class="font-bold text-blue-800 text-lg mb-1">📅 ${m.date}</p>
                                 <p class="text-sm font-semibold text-gray-700 bg-gray-100 inline-block px-2 py-1 rounded">
                                     🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
                                 </p>
-                                <p class="text-gray-800 mt-2"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
-                                <p class="text-gray-600 text-sm mt-1 break-words"><span class="font-semibold text-gray-600">รายละเอียด:</span> ${m.details} (วงเงิน: ${m.budget} บ.)</p>
-                                ${m.note ? `<p class="text-red-500 text-sm mt-1 font-semibold">* ${m.note}</p>` : ''}
+                                <p class="text-gray-800 mt-2 truncate"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
                             </div>
-                            <div class="mt-4 md:mt-0 w-full md:w-auto text-right">
-                                <a href="${calLink}" target="_blank" class="inline-block w-full text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-3 rounded-lg shadow-sm text-sm font-bold transition">
-                                    + บันทึกลงปฏิทิน
+                            <div class="mt-4 md:mt-0 w-full md:w-1/3 flex flex-col sm:flex-row gap-2 justify-end">
+                                <button onclick="viewMeetingDetails(${index})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">
+                                    🔍 ดูข้อมูล
+                                </button>
+                                <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">
+                                    + ปฏิทิน
                                 </a>
                             </div>
                         </div>`;
@@ -415,6 +422,28 @@
             } catch(e) {
                 container.innerHTML = `<div class="p-8 text-center text-red-500">เกิดข้อผิดพลาดในการดึงข้อมูล</div>`;
             }
+        }
+
+        // --- ฟังก์ชันสำหรับกดปุ่ม "ดูข้อมูล" (Popup) ---
+        function viewMeetingDetails(index) {
+            const m = window.userMeetingData[index];
+            if(!m) return;
+            
+            Swal.fire({
+                title: 'รายละเอียดการประชุม',
+                html: `
+                    <div class="text-left text-sm mt-4 bg-gray-50 p-4 rounded-lg border">
+                        <p class="mb-2"><strong class="text-blue-800">📅 วันที่:</strong> ${m.date}</p>
+                        <p class="mb-2"><strong class="text-blue-800">🕒 เวลา:</strong> ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}</p>
+                        <p class="mb-2"><strong class="text-blue-800">📌 ประเภท:</strong> ${m.type}</p>
+                        <p class="mb-2"><strong class="text-blue-800">📝 รายละเอียด:</strong> ${m.details || '-'}</p>
+                        <p class="mb-2"><strong class="text-blue-800">💰 วงเงิน:</strong> ${m.budget ? Number(m.budget).toLocaleString() + ' บาท' : '-'}</p>
+                        <p class="mb-2"><strong class="text-red-600">⚠️ หมายเหตุ:</strong> ${m.note || '-'}</p>
+                    </div>
+                `,
+                confirmButtonText: 'ปิด',
+                confirmButtonColor: '#1e40af' // สีฟ้าเข้มให้เข้ากับธีม
+            });
         }
     </script>
 </body>
