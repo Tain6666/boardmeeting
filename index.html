@@ -93,10 +93,7 @@
                 <div class="md:col-span-2">
                     <label class="block text-sm font-semibold mb-1">สถานที่พัก</label>
                     <input type="text" list="hotelList" id="hLocation" class="w-full border p-2 rounded" placeholder="เลือกจากรายการ หรือ พิมพ์ชื่อสถานที่ใหม่...">
-                    <datalist id="hotelList">
-                        <option value="หอพักหมอหลุยส์">
-                        <option value="เพิ่มอิสระ">
-                    </datalist>
+                    <datalist id="hotelList"><option value="หอพักหมอหลุยส์"><option value="เพิ่มอิสระ"></datalist>
                 </div>
                 <div><label class="block text-sm font-semibold mb-1">ผู้เข้าพัก (ใคร)</label><input type="text" id="hWho" class="w-full border p-2 rounded"></div>
                 <div><label class="block text-sm font-semibold mb-1">จำนวนคน</label><input type="number" id="hPax" class="w-full border p-2 rounded" min="1" value="1"></div>
@@ -133,11 +130,11 @@
                 <h2 class="text-2xl font-bold text-gray-800 border-l-4 border-blue-800 pl-3">ตารางการประชุม</h2>
                 <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
                     <select id="uFilterType" onchange="toggleDateInput('u')" class="border p-2 rounded text-sm bg-gray-50">
-                        <option value="daily">รายวัน</option><option value="monthly">รายเดือน</option><option value="yearly">รายปี</option>
+                        <option value="yearly">รายปี</option>
+                        <option value="monthly">รายเดือน</option>
                     </select>
-                    <input type="date" id="uDateTarget" class="border p-2 rounded text-sm">
                     <input type="month" id="uMonthTarget" class="border p-2 rounded text-sm hidden-page">
-                    <input type="number" id="uYearTarget" class="border p-2 rounded text-sm hidden-page w-24" placeholder="ปี ค.ศ. (เช่น 2026)">
+                    <input type="number" id="uYearTarget" class="border p-2 rounded text-sm w-24" placeholder="ปี ค.ศ. (เช่น 2026)">
                     
                     <button onclick="triggerUserSearch()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-sm shadow">🔍 ค้นหา</button>
                     <button onclick="printSpecificArea('userSchedule', 'ตารางการประชุมของท่าน')" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded font-bold text-sm shadow">🖨️ พิมพ์</button>
@@ -151,17 +148,15 @@
     </div>
 
     <script>
-        // *** เปลี่ยน URL WEB APP ตรงนี้ ***
+        // *** อย่าลืมเปลี่ยน URL WEB APP ตรงนี้ ***
         const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; 
 
         window.userMeetingData = [];
         const defaultParticipants = [ "คุณพงศธร คุณานุสรณ์", "ศจ.ดร.เสมอใจ ศรีมาลา", "ผป.วิชัย จิตรถเวช", "นายโซวัน โล", "ผป.บุญชัย เด่นสกุล", "คุณอภิศักดิ์ ก้องกังวาฬโชค", "ผป.นพ.เอกลาภ ทองบริสุทธิ์", "นพ.ชูศักดิ์ วงศ์สุรีย์", "นพ.ยุทธศักดิ์ วงศ์สุรีย์", "นพ.ยุคลพรรษ สกุลกัน", "ภญ.สิริพร กัลชาญพิเศษ", "นางเกตุแก้ว หวัง", "นายปิยะ นันตาฤทธานนท์", "นางรัชนี โสรัจจวัฒน์", "นายศุภชัย อรุณรักถาวร" ];
 
-        // --- ฟังก์ชันแปลงวันที่ให้เป็น DD MMM YYYY (เช่น 20 Mar 2026) ---
         function formatToDMMMYYYY(dateStr) {
             if (!dateStr) return '-';
             let d = new Date(dateStr);
-            // กรณี dateStr มาเป็นแบบ DD/MM/YYYY
             if (isNaN(d.getTime())) {
                 let parts = dateStr.split('/');
                 if (parts.length === 3) d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
@@ -182,9 +177,12 @@
             
             document.getElementById('dbDateTarget').value = `${y}-${m}-${d}`;
             document.getElementById('dbMonthTarget').value = `${y}-${m}`;
-            document.getElementById('uDateTarget').value = `${y}-${m}-${d}`;
+            
+            // ตั้งค่าเริ่มต้น User Dashboard
             document.getElementById('uMonthTarget').value = `${y}-${m}`;
             document.getElementById('uYearTarget').value = y;
+            document.getElementById('uFilterType').value = 'yearly';
+            toggleDateInput('u'); // แสดงช่องรายปีอัตโนมัติ
 
             checkLoginStatus();
         }
@@ -235,7 +233,10 @@
                 let el = document.getElementById(prefix + t);
                 if(el) el.classList.add('hidden-page');
             });
-            if (type === 'daily') document.getElementById(prefix + 'DateTarget').classList.remove('hidden-page');
+            if (type === 'daily') {
+                let d = document.getElementById(prefix + 'DateTarget');
+                if(d) d.classList.remove('hidden-page');
+            }
             else if (type === 'monthly') document.getElementById(prefix + 'MonthTarget').classList.remove('hidden-page');
             else if (type === 'yearly') document.getElementById(prefix + 'YearTarget').classList.remove('hidden-page');
         }
@@ -263,11 +264,8 @@
                 if (res.success) {
                     Swal.close();
                     document.getElementById('dashboardResults').innerHTML = ''; 
-                    
-                    // เพิ่มดัชนี 7 (ผู้เข้าร่วมประชุม) เข้าไปในตารางนัดประชุมของ Admin
                     renderDashboardTable('dbMeeting', '📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5, 7], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด', 'ผู้เข้าร่วม'], 'blue');
                     renderDashboardTable('dbCar', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
-                    // จัดการแสดงผลวันที่ CheckIn/CheckOut ให้เป็นรูปแบบใหม่
                     renderDashboardTable('dbHotel', '🏨 การจองห้องพัก', res.data.hotel, [1, 2, 5, 6, 3], ['วันที่บันทึก', 'สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก'], 'purple');
                 } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
             } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); }
@@ -291,13 +289,9 @@
                     html += `<tr class="hover:bg-gray-50">`;
                     columnIndices.forEach(idx => { 
                         let cellValue = row[idx] ? row[idx].toString() : '-';
-                        
-                        // ถ้ารหัสคอลัมน์เป็น 1 (Date), 5 (CheckIn), 6 (CheckOut) ให้แปลงฟอร์แมตวันที่
                         if (idx === 1 || (idPrefix === 'dbHotel' && (idx === 5 || idx === 6))) {
                             cellValue = formatToDMMMYYYY(cellValue);
                         }
-                        
-                        // ขยายลิมิตข้อความเพราะรายชื่อผู้เข้าร่วมอาจจะยาวมาก
                         html += `<td class="px-4 py-3">${cellValue.substring(0, 300)}</td>`; 
                     });
                     html += `</tr>`;
@@ -313,11 +307,12 @@
             const userName = JSON.parse(userStr).name;
             const type = document.getElementById('uFilterType').value;
             let target = '';
-            if(type === 'daily') target = document.getElementById('uDateTarget').value;
-            else if(type === 'monthly') target = document.getElementById('uMonthTarget').value;
+            
+            // ใช้เงื่อนไขให้ถูกกับการดึงช่อง Input
+            if(type === 'monthly') target = document.getElementById('uMonthTarget').value;
             else if(type === 'yearly') target = document.getElementById('uYearTarget').value;
 
-            if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุวันที่/เดือน/ปี', 'warning');
+            if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุเดือน/ปี', 'warning');
 
             const container = document.getElementById('userSchedule');
             container.innerHTML = `<div class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>`;
@@ -333,7 +328,6 @@
                     
                     let groupedData = {};
                     res.data.forEach(m => {
-                        // แปลงวันที่ก่อนทำการจัดกลุ่ม
                         m.displayDate = formatToDMMMYYYY(m.date);
                         if(!groupedData[m.displayDate]) groupedData[m.displayDate] = [];
                         groupedData[m.displayDate].push(m);
@@ -343,7 +337,6 @@
                     let globalIndex = 0;
 
                     for(const [dateKey, meetings] of Object.entries(groupedData)) {
-                        // หัวข้อกลุ่มจะเป็นวันที่รูปแบบ 20 Mar 2026 แล้ว
                         html += `<div class="bg-blue-50 text-blue-800 font-bold p-3 text-lg border-y mt-4 first:mt-0">📅 ${dateKey}</div>`;
                         
                         meetings.forEach((m) => {
@@ -353,16 +346,27 @@
                             const endDateTime = m.date.replace(/-/g, '') + 'T' + eTime;
                             const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}&ctz=Asia/Bangkok`;
 
-                            html += `<div class="p-5 hover:bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center border-b">
-                                <div class="w-full md:w-2/3">
-                                    <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded">
-                                        🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
-                                    </p>
-                                    <p class="text-gray-800 mt-2 truncate"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
+                            html += `<div class="p-4 hover:bg-gray-50 border-b flex flex-col">
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center no-print">
+                                    <div class="w-full md:w-2/3">
+                                        <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded">
+                                            🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
+                                        </p>
+                                        <p class="text-gray-800 mt-2 truncate"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
+                                    </div>
+                                    <div class="mt-4 md:mt-0 w-full md:w-1/3 flex flex-col sm:flex-row gap-2 justify-end">
+                                        <button onclick="viewMeetingDetails(${globalIndex})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔍 ดูข้อมูล</button>
+                                        <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a>
+                                    </div>
                                 </div>
-                                <div class="mt-4 md:mt-0 w-full md:w-1/3 flex flex-col sm:flex-row gap-2 justify-end no-print">
-                                    <button onclick="viewMeetingDetails(${globalIndex})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔍 ดูข้อมูล</button>
-                                    <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a>
+                                
+                                <div class="hidden print:block mt-2 text-sm text-gray-800 space-y-1 bg-white">
+                                    <p><strong>🕒 เวลา:</strong> ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}</p>
+                                    <p><strong>📌 ประเภท:</strong> ${m.type}</p>
+                                    <p><strong>📝 รายละเอียด:</strong> ${m.details || '-'}</p>
+                                    <p><strong>💰 วงเงิน:</strong> ${m.budget ? Number(m.budget).toLocaleString() + ' บาท' : '-'}</p>
+                                    <p><strong>👥 ผู้เข้าร่วม:</strong> ${m.participants || '-'}</p>
+                                    <p><strong>⚠️ หมายเหตุ:</strong> ${m.note || '-'}</p>
                                 </div>
                             </div>`;
                             globalIndex++;
