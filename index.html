@@ -13,14 +13,14 @@
         .hidden-page { display: none; }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="text-gray-800 pb-10">
 
-    <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center">
+    <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-50">
         <div class="font-bold text-lg">BCH Management</div>
-        <div id="userInfo" class="text-sm hidden">
-            <span id="displayRole" class="mr-2 px-2 py-1 bg-blue-600 rounded text-xs"></span>
-            <span id="displayName" class="mr-4"></span>
-            <button onclick="logout()" class="text-red-300 hover:text-red-100 font-semibold">ออกจากระบบ</button>
+        <div id="userInfo" class="text-sm hidden flex items-center">
+            <span id="displayRole" class="mr-2 px-2 py-1 bg-blue-600 rounded text-xs uppercase hidden sm:inline-block"></span>
+            <span id="displayName" class="mr-4 font-semibold"></span>
+            <button onclick="logout()" class="text-red-200 hover:text-white font-semibold bg-red-600 px-3 py-1 rounded">ออก</button>
         </div>
     </nav>
 
@@ -31,48 +31,160 @@
                 <label class="block text-sm font-semibold mb-2">เบอร์โทรศัพท์ (Login)</label>
                 <input type="tel" id="loginPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" placeholder="08XXXXXXXX">
             </div>
-            <button onclick="login()" class="w-full bg-blue-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">เข้าสู่ระบบ</button>
+            <button onclick="login()" class="w-full bg-blue-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition shadow-md">เข้าสู่ระบบ</button>
         </div>
     </div>
 
-    <div id="pageAdmin" class="container mx-auto p-4 mt-4 hidden-page max-w-2xl">
+    <div id="pageAdmin" class="container mx-auto p-4 mt-4 hidden-page max-w-4xl">
         <h2 class="text-xl font-bold mb-4">เมนูสำหรับผู้ดูแลระบบ</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button onclick="showSection('sectionMeeting')" class="bg-white p-6 rounded-lg shadow hover:shadow-md border-l-4 border-blue-500 font-semibold text-left">📝 จองนัดประชุม</button>
-            <button onclick="showSection('sectionCar')" class="bg-white p-6 rounded-lg shadow hover:shadow-md border-l-4 border-green-500 font-semibold text-left">🚐 จองรถรับ-ส่ง</button>
-            <button onclick="showSection('sectionHotel')" class="bg-white p-6 rounded-lg shadow hover:shadow-md border-l-4 border-purple-500 font-semibold text-left">🏨 จองห้องพัก</button>
+            <button onclick="showSection('sectionMeeting')" class="bg-white p-6 rounded-lg shadow hover:shadow-md border-l-4 border-blue-500 font-semibold text-left flex items-center justify-between">
+                <span>📝 จองนัดประชุม</span>
+            </button>
+            <button onclick="showSection('sectionCar')" class="bg-white p-6 rounded-lg shadow hover:shadow-md border-l-4 border-green-500 font-semibold text-left flex items-center justify-between">
+                <span>🚐 จองรถรับ-ส่ง</span>
+            </button>
+            <button onclick="showSection('sectionHotel')" class="bg-white p-6 rounded-lg shadow hover:shadow-md border-l-4 border-purple-500 font-semibold text-left flex items-center justify-between">
+                <span>🏨 จองห้องพัก</span>
+            </button>
         </div>
 
-        <div id="sectionMeeting" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page">
-            <h3 class="font-bold text-lg mb-4 text-blue-800">ระบบจองนัดการประชุม</h3>
-            <div class="grid grid-cols-1 gap-4">
-                <div><label class="block text-sm">วันที่</label><input type="date" id="mDate" class="w-full border p-2 rounded"></div>
-                <div><label class="block text-sm">เวลา</label><input type="time" id="mTime" class="w-full border p-2 rounded"></div>
+        <div id="sectionMeeting" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page border-t-4 border-blue-500">
+            <h3 class="font-bold text-lg mb-4 text-blue-800">📝 ระบบจองนัดการประชุม</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">วันที่</label>
+                    <input type="date" id="mDate" class="w-full border p-2 rounded focus:ring-2 outline-none">
+                </div>
                 <div>
-                    <label class="block text-sm">ประเภท</label>
-                    <select id="mType" class="w-full border p-2 rounded">
+                    <label class="block text-sm font-semibold mb-1">เวลาเริ่ม</label>
+                    <input type="time" id="mStartTime" class="w-full border p-2 rounded focus:ring-2 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">เวลาสิ้นสุด</label>
+                    <input type="time" id="mEndTime" class="w-full border p-2 rounded focus:ring-2 outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">ประเภท</label>
+                    <select id="mType" class="w-full border p-2 rounded focus:ring-2 outline-none bg-white">
                         <option>ต่อรองจัดซื้อ</option><option>ต่อรองจัดจ้าง</option><option>พิจารณา TOR จัดซื้อ</option>
                         <option>พิจารณา TOR จัดจ้าง</option><option>เปิดซอง</option><option>ตรวจรับ</option>
                         <option>ก่อสร้าง</option><option>Board สามัญ</option><option>Board วิสามัญ</option><option>อื่นๆ</option>
                     </select>
                 </div>
-                <div><label class="block text-sm">รายละเอียด</label><input type="text" id="mDetails" class="w-full border p-2 rounded"></div>
-                <div><label class="block text-sm">วงเงิน (บาท)</label><input type="number" id="mBudget" class="w-full border p-2 rounded"></div>
-                <div>
-                    <label class="block text-sm mb-1">รายชื่อผู้เข้าร่วม (เลือกได้หลายคน)</label>
-                    <div class="h-40 overflow-y-scroll border p-2 rounded text-sm bg-gray-50" id="participantList">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">รายละเอียด</label>
+                    <input type="text" id="mDetails" class="w-full border p-2 rounded focus:ring-2 outline-none" placeholder="ระบุรายละเอียดการประชุม">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">วงเงิน (บาท)</label>
+                    <input type="number" id="mBudget" class="w-full border p-2 rounded focus:ring-2 outline-none" placeholder="0.00">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">รายชื่อผู้เข้าร่วม (เลือกได้หลายคน)</label>
+                    <div class="h-48 overflow-y-scroll border p-3 rounded text-sm bg-gray-50 grid grid-cols-1 md:grid-cols-2 gap-2" id="participantList">
                         </div>
                 </div>
-                <div><label class="block text-sm">หมายเหตุ</label><input type="text" id="mNote" class="w-full border p-2 rounded"></div>
-                <button onclick="saveMeeting()" class="bg-blue-600 text-white p-2 rounded font-bold w-full mt-2">บันทึกข้อมูลประชุม</button>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">หมายเหตุ</label>
+                    <input type="text" id="mNote" class="w-full border p-2 rounded focus:ring-2 outline-none" placeholder="ระบุเพิ่มเติม (ถ้ามี)">
+                </div>
+                <div class="md:col-span-2 mt-2">
+                    <button onclick="saveMeeting()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold w-full transition shadow-md">บันทึกข้อมูลประชุม</button>
+                </div>
             </div>
         </div>
         
+        <div id="sectionCar" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page border-t-4 border-green-500">
+            <h3 class="font-bold text-lg mb-4 text-green-700">🚐 ระบบจองรถรับ-ส่ง</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">วันที่ใช้รถ</label>
+                    <input type="date" id="cBookingDate" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">เวลารับ</label>
+                    <input type="time" id="cPickupTime" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">สถานที่รับ</label>
+                    <input type="text" id="cPickupLocation" class="w-full border p-2 rounded outline-none" placeholder="เช่น อาคาร... ชั้น...">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">สถานที่ส่ง</label>
+                    <input type="text" id="cDropoffLocation" class="w-full border p-2 rounded outline-none" placeholder="ระบุปลายทาง">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">ผู้เดินทาง (ใคร)</label>
+                    <input type="text" id="cWho" class="w-full border p-2 rounded outline-none" placeholder="ชื่อผู้เดินทางหลัก">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">จำนวนคน</label>
+                    <input type="number" id="cPax" class="w-full border p-2 rounded outline-none" min="1" value="1">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label>
+                    <input type="tel" id="cContact" class="w-full border p-2 rounded outline-none" placeholder="08XXXXXXXX">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">หมายเหตุ</label>
+                    <input type="text" id="cNote" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div class="md:col-span-2 mt-2">
+                    <button onclick="saveCar()" class="bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-bold w-full transition shadow-md">บันทึกการจองรถ</button>
+                </div>
+            </div>
         </div>
 
+        <div id="sectionHotel" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page border-t-4 border-purple-500">
+            <h3 class="font-bold text-lg mb-4 text-purple-700">🏨 ระบบจองห้องพัก</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">วันที่ทำรายการ</label>
+                    <input type="date" id="hBookingDate" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">สถานที่พัก</label>
+                    <select id="hLocation" class="w-full border p-2 rounded outline-none bg-white">
+                        <option value="">-- เลือกสถานที่ --</option>
+                        <option value="หอพักหมอหลุยส์">หอพักหมอหลุยส์</option>
+                        <option value="เพิ่มอิสระ">เพิ่มอิสระ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">ผู้เข้าพัก (ใคร)</label>
+                    <input type="text" id="hWho" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">จำนวนคน</label>
+                    <input type="number" id="hPax" class="w-full border p-2 rounded outline-none" min="1" value="1">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">เช็คอิน (วันเข้า)</label>
+                    <input type="date" id="hCheckIn" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">เช็คเอาท์ (วันออก)</label>
+                    <input type="date" id="hCheckOut" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label>
+                    <input type="tel" id="hContact" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">หมายเหตุ</label>
+                    <input type="text" id="hNote" class="w-full border p-2 rounded outline-none">
+                </div>
+                <div class="md:col-span-2 mt-2">
+                    <button onclick="saveHotel()" class="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg font-bold w-full transition shadow-md">บันทึกการจองห้องพัก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="pageUser" class="container mx-auto p-4 mt-4 hidden-page max-w-4xl">
-        <h2 class="text-xl font-bold mb-4 text-gray-800">ตารางการประชุมของท่าน</h2>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <h2 class="text-xl font-bold mb-4 text-gray-800 border-l-4 border-blue-800 pl-3">ตารางการประชุมของท่าน</h2>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div id="userSchedule" class="divide-y divide-gray-200">
                 <div class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>
             </div>
@@ -80,10 +192,9 @@
     </div>
 
     <script>
-        // *** ใส่ URL WEB APP ที่ได้จากขั้นตอนที่ 2 ตรงนี้ ***
-        const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; 
+        // *** อย่าลืมเปลี่ยน URL WEB APP เป็นของคุณ ***
+        const API_URL = "YOUR_WEB_APP_URL_HERE"; 
 
-        // รายชื่อตั้งต้น
         const defaultParticipants = [
             "คุณพงศธร คุณานุสรณ์", "ศจ.ดร.เสมอใจ ศรีมาลา", "ผป.วิชัย จิตรถเวช", 
             "นายโซวัน โล", "ผป.บุญชัย เด่นสกุล", "คุณอภิศักดิ์ ก้องกังวาฬโชค", 
@@ -92,7 +203,6 @@
             "นายปิยะ นันตาฤทธานนท์", "นางรัชนี โสรัจจวัฒน์", "นายศุภชัย อรุณรักถาวร"
         ];
 
-        // เมื่อเปิดหน้าเว็บ
         window.onload = function() {
             renderParticipants();
             checkLoginStatus();
@@ -102,9 +212,9 @@
             const list = document.getElementById('participantList');
             let html = '';
             defaultParticipants.forEach(name => {
-                html += `<label class="flex items-center space-x-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                            <input type="checkbox" value="${name}" class="chk-participant rounded text-blue-600">
-                            <span>${name}</span>
+                html += `<label class="flex items-center space-x-2 p-1 hover:bg-gray-200 rounded cursor-pointer transition">
+                            <input type="checkbox" value="${name}" class="chk-participant rounded text-blue-600 w-4 h-4">
+                            <span class="text-gray-700">${name}</span>
                          </label>`;
             });
             list.innerHTML = html;
@@ -115,7 +225,7 @@
             if (userStr) {
                 const user = JSON.parse(userStr);
                 document.getElementById('displayName').innerText = user.name;
-                document.getElementById('displayRole').innerText = user.role.toUpperCase();
+                document.getElementById('displayRole').innerText = user.role;
                 document.getElementById('userInfo').classList.remove('hidden');
                 
                 document.getElementById('pageLogin').classList.add('hidden-page');
@@ -165,18 +275,21 @@
 
         function showSection(sectionId) {
             document.getElementById('sectionMeeting').classList.add('hidden-page');
+            document.getElementById('sectionCar').classList.add('hidden-page');
+            document.getElementById('sectionHotel').classList.add('hidden-page');
             document.getElementById(sectionId).classList.remove('hidden-page');
         }
 
+        // --- Save Meeting (เพิ่มเวลาสิ้นสุด) ---
         async function saveMeeting() {
-            // รวบรวมรายชื่อผู้เข้าร่วมที่ถูกติ๊ก
             let selected = [];
             document.querySelectorAll('.chk-participant:checked').forEach(chk => selected.push(chk.value));
             
             const payload = {
                 action: 'saveMeeting',
                 date: document.getElementById('mDate').value,
-                time: document.getElementById('mTime').value,
+                startTime: document.getElementById('mStartTime').value,
+                endTime: document.getElementById('mEndTime').value, // ดึงค่าเวลาสิ้นสุด
                 type: document.getElementById('mType').value,
                 details: document.getElementById('mDetails').value,
                 budget: document.getElementById('mBudget').value,
@@ -184,19 +297,80 @@
                 note: document.getElementById('mNote').value
             };
 
-            if(!payload.date || !payload.time) return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่และเวลา', 'warning');
+            if(!payload.date || !payload.startTime || !payload.endTime) {
+                return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่, เวลาเริ่ม และเวลาสิ้นสุด', 'warning');
+            }
 
             Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json());
-            
-            if(res.success) {
-                Swal.fire('สำเร็จ', res.message, 'success');
-                // ล้างฟอร์ม
-                document.querySelectorAll('#sectionMeeting input').forEach(inp => inp.value = '');
-                document.querySelectorAll('.chk-participant').forEach(chk => chk.checked = false);
-            }
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json());
+                if(res.success) {
+                    Swal.fire('สำเร็จ', res.message, 'success');
+                    document.querySelectorAll('#sectionMeeting input').forEach(inp => inp.value = '');
+                    document.querySelectorAll('.chk-participant').forEach(chk => chk.checked = false);
+                } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
+            } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
         }
 
+        // --- Save Car ---
+        async function saveCar() {
+            const payload = {
+                action: 'saveCar',
+                bookingDate: document.getElementById('cBookingDate').value,
+                pickupTime: document.getElementById('cPickupTime').value,
+                pickupLocation: document.getElementById('cPickupLocation').value,
+                dropoffLocation: document.getElementById('cDropoffLocation').value,
+                who: document.getElementById('cWho').value,
+                pax: document.getElementById('cPax').value,
+                contact: document.getElementById('cContact').value,
+                note: document.getElementById('cNote').value
+            };
+
+            if(!payload.bookingDate || !payload.pickupLocation || !payload.dropoffLocation) {
+                return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่ และสถานที่รับ-ส่งให้ครบ', 'warning');
+            }
+
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json());
+                if(res.success) {
+                    Swal.fire('สำเร็จ', res.message, 'success');
+                    document.querySelectorAll('#sectionCar input').forEach(inp => { if(inp.type !== 'number') inp.value = ''; });
+                    document.getElementById('cPax').value = 1;
+                } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
+            } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
+        }
+
+        // --- Save Hotel ---
+        async function saveHotel() {
+            const payload = {
+                action: 'saveHotel',
+                bookingDate: document.getElementById('hBookingDate').value,
+                location: document.getElementById('hLocation').value,
+                who: document.getElementById('hWho').value,
+                pax: document.getElementById('hPax').value,
+                checkIn: document.getElementById('hCheckIn').value,
+                checkOut: document.getElementById('hCheckOut').value,
+                contact: document.getElementById('hContact').value,
+                note: document.getElementById('hNote').value
+            };
+
+            if(!payload.location || !payload.checkIn || !payload.checkOut) {
+                return Swal.fire('แจ้งเตือน', 'กรุณาเลือกสถานที่พัก และระบุวันเข้า-ออกให้ครบ', 'warning');
+            }
+
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json());
+                if(res.success) {
+                    Swal.fire('สำเร็จ', res.message, 'success');
+                    document.querySelectorAll('#sectionHotel input, #sectionHotel select').forEach(inp => { if(inp.type !== 'number') inp.value = ''; });
+                    document.getElementById('hPax').value = 1;
+                } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
+            } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
+        }
+
+        // --- Load User Meetings ---
         async function loadUserMeetings(userName) {
             const container = document.getElementById('userSchedule');
             try {
@@ -208,21 +382,30 @@
                 if (res.success && res.data.length > 0) {
                     let html = '';
                     res.data.forEach(m => {
-                        // สร้าง Link สำหรับ Add to Google Calendar
-                        const startDateTime = m.date.replace(/-/g, '') + 'T' + m.time.replace(':', '') + '00';
-                        const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${startDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}`;
+                        // ปรับแต่งการสร้าง Link ลงปฏิทินให้ครอบคลุมเวลาสิ้นสุด
+                        let sTime = m.startTime ? m.startTime.replace(':', '') + '00' : '000000';
+                        let eTime = m.endTime ? m.endTime.replace(':', '') + '00' : sTime;
+                        
+                        const startDateTime = m.date.replace(/-/g, '') + 'T' + sTime;
+                        const endDateTime = m.date.replace(/-/g, '') + 'T' + eTime;
+                        const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}`;
 
                         html += `
-                        <div class="p-4 hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                            <div>
-                                <p class="font-bold text-blue-800 text-lg">${m.date} <span class="text-gray-500 text-sm ml-2">🕒 ${m.time} น.</span></p>
-                                <p class="text-gray-800 mt-1"><span class="font-semibold">ประเภท:</span> ${m.type}</p>
-                                <p class="text-gray-600 text-sm mt-1">${m.details} (วงเงิน: ${m.budget} บ.)</p>
-                                ${m.note ? `<p class="text-red-500 text-xs mt-1">* ${m.note}</p>` : ''}
+                        <div class="p-5 hover:bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center border-b">
+                            <div class="w-full md:w-3/4">
+                                <p class="font-bold text-blue-800 text-lg mb-1">📅 ${m.date}</p>
+                                <p class="text-sm font-semibold text-gray-700 bg-gray-100 inline-block px-2 py-1 rounded">
+                                    🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
+                                </p>
+                                <p class="text-gray-800 mt-2"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
+                                <p class="text-gray-600 text-sm mt-1 break-words"><span class="font-semibold text-gray-600">รายละเอียด:</span> ${m.details} (วงเงิน: ${m.budget} บ.)</p>
+                                ${m.note ? `<p class="text-red-500 text-sm mt-1 font-semibold">* ${m.note}</p>` : ''}
                             </div>
-                            <a href="${calLink}" target="_blank" class="mt-3 sm:mt-0 bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded shadow-sm text-sm font-semibold flex items-center">
-                                📅 บันทึกลงปฏิทิน
-                            </a>
+                            <div class="mt-4 md:mt-0 w-full md:w-auto text-right">
+                                <a href="${calLink}" target="_blank" class="inline-block w-full text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-3 rounded-lg shadow-sm text-sm font-bold transition">
+                                    + บันทึกลงปฏิทิน
+                                </a>
+                            </div>
                         </div>`;
                     });
                     container.innerHTML = html;
