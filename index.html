@@ -213,52 +213,67 @@
             const target = type === 'daily' ? document.getElementById('dbDateTarget').value : document.getElementById('dbMonthTarget').value;
             
             if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุวันที่หรือเดือนที่ต้องการดูรายงาน', 'warning');
-            
-            // อัปเดตหัวข้อตอน Print
-            document.getElementById('printDateHeader').innerText = `ประจำ${type === 'daily' ? 'วัน' : 'เดือน'}ที่: ${target}`;
+        
+        // อัปเดตหัวข้อตอน Print
+        document.getElementById('printDateHeader').innerText = `ประจำ${type === 'daily' ? 'วัน' : 'เดือน'}ที่: ${target}`;
 
-            Swal.fire({ title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading() });
 
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'getDashboardData', filterType: type, targetDate: target })
-                }).then(r => r.json());
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getDashboardData', filterType: type, targetDate: target })
+            }).then(r => r.json());
 
-                if (res.success) {
-                    Swal.close();
-                    renderDashboardTable('📝 การนัดประชุม', res.data.meeting, ['Date', 'StartTime', 'EndTime', 'Type', 'Details'], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด'], 'blue');
-                    renderDashboardTable('🚐 การจองรถรับ-ส่ง', res.data.car, ['BookingDate', 'PickupTime', 'PickupLocation', 'Who', 'Contact'], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
-                    renderDashboardTable('🏨 การจองห้องพัก', res.data.hotel, ['BookingDate', 'Location', 'CheckIn', 'CheckOut', 'Who'], ['วันที่จอง', 'สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก'], 'purple');
-                } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
-            } catch(e) { Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error'); }
-        }
-
-        function renderDashboardTable(title, dataArray, keys, headers, colorTheme) {
-            const container = document.getElementById('dashboardResults');
-            if(container.innerHTML.includes("กรุณาเลือกวันที่")) container.innerHTML = ''; // ลบข้อความตั้งต้น
-
-            let html = `<div><h4 class="font-bold text-lg text-${colorTheme}-700 border-b-2 border-${colorTheme}-500 mb-2 pb-1">${title} (รวม ${dataArray.length} รายการ)</h4>`;
-            
-            if(dataArray.length === 0) {
-                html += `<p class="text-gray-500 text-sm italic">ไม่มีข้อมูลในวัน/เดือน ที่เลือก</p></div>`;
-            } else {
-                html += `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left border"><thead class="bg-${colorTheme}-50 text-${colorTheme}-800"><tr>`;
-                headers.forEach(h => html += `<th class="px-4 py-2 border">${h}</th>`);
-                html += `</tr></thead><tbody>`;
+            if (res.success) {
+                Swal.close();
                 
-                dataArray.forEach(row => {
-                    html += `<tr class="border-b">`;
-                    keys.forEach(k => html += `<td class="px-4 py-2 border">${row[k] || '-'}</td>`);
-                    html += `</tr>`;
-                });
-                html += `</tbody></table></div></div>`;
+                // เรียกฟังก์ชันสร้างตาราง โดยระบุลำดับคอลัมน์ที่ต้องการแสดง (เริ่มนับ 0 จากคอลัมน์ Timestamp)
+                // Meeting ต้องการ: Date(1), StartTime(2), EndTime(3), Type(4), Details(5)
+                renderDashboardTable('📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด'], 'blue');
+                
+                // Car ต้องการ: BookingDate(1), PickupTime(2), PickupLocation(3), Who(4), Contact(7)
+                renderDashboardTable('🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
+                
+                // Hotel ต้องการ: BookingDate(1), Location(2), CheckIn(5), CheckOut(6), Who(3)
+                renderDashboardTable('🏨 การจองห้องพัก', res.data.hotel, [1, 2, 5, 6, 3], ['วันที่จอง', 'สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก'], 'purple');
+            } else { 
+                Swal.fire('ผิดพลาด', res.message, 'error'); 
             }
-            
-            // ถ้าตารางเป็นตารางแรก ให้แทนที่ ถ้าตารางถัดไปให้ต่อท้าย
-            if (title.includes("ประชุม")) container.innerHTML = html;
-            else container.innerHTML += html;
+        } catch(e) { 
+            Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error'); 
         }
+    }
+
+    function renderDashboardTable(title, dataArray, columnIndices, headers, colorTheme) {
+        const container = document.getElementById('dashboardResults');
+        if(container.innerHTML.includes("กรุณาเลือกวันที่")) container.innerHTML = ''; // ล้างข้อความตั้งต้น
+
+        let html = `<div class="mb-8"><h4 class="font-bold text-lg text-${colorTheme}-700 border-b-2 border-${colorTheme}-500 mb-3 pb-1">${title} (รวม ${dataArray.length} รายการ)</h4>`;
+        
+        if(dataArray.length === 0) {
+            html += `<p class="text-gray-500 text-sm italic bg-gray-50 p-4 rounded text-center">ไม่มีข้อมูลในวัน/เดือน ที่เลือก</p></div>`;
+        } else {
+            html += `<div class="overflow-x-auto shadow-sm rounded-lg"><table class="min-w-full text-sm text-left bg-white"><thead class="bg-${colorTheme}-100 text-${colorTheme}-800"><tr>`;
+            headers.forEach(h => html += `<th class="px-4 py-3 font-semibold border-b border-${colorTheme}-200">${h}</th>`);
+            html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
+            
+            // วนลูปดึงข้อมูลตามลำดับ Index (Array แบบตัวเลข) แทนการใช้ชื่อ Header
+            dataArray.forEach(row => {
+                html += `<tr class="hover:bg-gray-50">`;
+                columnIndices.forEach(idx => {
+                    let cellValue = row[idx] ? row[idx].toString().substring(0, 50) : '-'; // ตัดข้อความถ้ามันยาวเกินไป
+                    html += `<td class="px-4 py-3">${cellValue}</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table></div></div>`;
+        }
+        
+        // ถ้าตารางเป็นตารางแรก ให้แทนที่ ถ้าเป็นตารางถัดไปให้ต่อท้าย
+        if (title.includes("ประชุม")) container.innerHTML = html;
+        else container.insertAdjacentHTML('beforeend', html);
+    }
     </script>
 </body>
 </html>
