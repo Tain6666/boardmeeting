@@ -82,6 +82,7 @@
                 <div><label class="block text-sm font-semibold mb-1">ผู้เดินทาง (ใคร)</label><input type="text" id="cWho" class="w-full border p-2 rounded"></div>
                 <div><label class="block text-sm font-semibold mb-1">จำนวนคน</label><input type="number" id="cPax" class="w-full border p-2 rounded" min="1" value="1"></div>
                 <div><label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label><input type="tel" id="cContact" class="w-full border p-2 rounded" placeholder="08XXXXXXXX"></div>
+                <div><label class="block text-sm font-semibold mb-1">แนบรูปภาพ</label><input type="file" id="cImage" accept="image/*" class="w-full border p-1 rounded bg-white"></div>
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">หมายเหตุ</label><input type="text" id="cNote" class="w-full border p-2 rounded"></div>
                 <div class="md:col-span-2 mt-2"><button onclick="saveCar()" class="bg-green-600 text-white p-3 rounded-lg font-bold w-full">บันทึกการจองรถ</button></div>
             </div>
@@ -134,7 +135,7 @@
                         <option value="monthly">รายเดือน</option>
                     </select>
                     <input type="month" id="uMonthTarget" class="border p-2 rounded text-sm hidden-page">
-                    <input type="number" id="uYearTarget" class="border p-2 rounded text-sm w-24" placeholder="ปี ค.ศ. (เช่น 2026)">
+                    <input type="number" id="uYearTarget" class="border p-2 rounded text-sm w-24" placeholder="ปี ค.ศ.">
                     
                     <button onclick="triggerUserSearch()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-sm shadow">🔍 ค้นหา</button>
                     <button onclick="printSpecificArea('userSchedule', 'ตารางการประชุมของท่าน')" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded font-bold text-sm shadow">🖨️ พิมพ์</button>
@@ -148,11 +149,10 @@
     </div>
 
     <script>
-        // *** อย่าลืมเปลี่ยน URL WEB APP ตรงนี้ ***
+        // *** เปลี่ยน URL WEB APP ตรงนี้ ***
         const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; 
 
-        window.userMeetingData = [];
-        const defaultParticipants = [ "คุณพงศธร คุณานุสรณ์", "ศจ.ดร.เสมอใจ ศรีมาลา", "ผป.วิชัย จิตรถเวช", "นายโซวัน โล", "ผป.บุญชัย เด่นสกุล", "คุณอภิศักดิ์ ก้องกังวาฬโชค", "ผป.นพ.เอกลาภ ทองบริสุทธิ์", "นพ.ชูศักดิ์ วงศ์สุรีย์", "นพ.ยุทธศักดิ์ ตั้งสุขสันต์", "นพ.ยุคลพรรษ สกุลกัน", "นางกมลเนตร วงษ์วรรณะ", "ภญ.สิริพร กัลชาญพิเศษ", "นางเกตุแก้ว หวัง", "นายปิยะ นันตาฤทธานนท์", "นางรัชนี โสรัจจวัฒน์", "นายศุภชัย อรุณรักถาวร" ];
+        const defaultParticipants = [ "คุณพงศธร คุณานุสรณ์", "ศจ.ดร.เสมอใจ ศรีมาลา", "ผป.วิชัย จิตรถเวช", "นายโซวัน โล", "ผป.บุญชัย เด่นสกุล", "คุณอภิศักดิ์ ก้องกังวาฬโชค", "ผป.นพ.เอกลาภ ทองบริสุทธิ์", "นพ.ชูศักดิ์ วงศ์สุรีย์", "นพ.ยุทธศักดิ์ ตั้งสุขสันต์", "นพ.ยุคลพรรษ สกุลกัน", "ภญ.สิริพร กัลชาญพิเศษ", "นางเกตุแก้ว หวัง", "นายปิยะ นันตาฤทธานนท์", "นายศุภชัย อรุณรักถาวร" ];
 
         function formatToDMMMYYYY(dateStr) {
             if (!dateStr) return '-';
@@ -178,11 +178,10 @@
             document.getElementById('dbDateTarget').value = `${y}-${m}-${d}`;
             document.getElementById('dbMonthTarget').value = `${y}-${m}`;
             
-            // ตั้งค่าเริ่มต้น User Dashboard
             document.getElementById('uMonthTarget').value = `${y}-${m}`;
             document.getElementById('uYearTarget').value = y;
             document.getElementById('uFilterType').value = 'yearly';
-            toggleDateInput('u'); // แสดงช่องรายปีอัตโนมัติ
+            toggleDateInput('u'); 
 
             checkLoginStatus();
         }
@@ -224,7 +223,50 @@
         function showSection(sectionId) { ['sectionMeeting','sectionCar','sectionHotel','sectionDashboard'].forEach(id => document.getElementById(id).classList.add('hidden-page')); document.getElementById(sectionId).classList.remove('hidden-page'); }
 
         async function saveMeeting() { let selected = []; document.querySelectorAll('.chk-participant:checked').forEach(chk => selected.push(chk.value)); const payload = { action: 'saveMeeting', date: document.getElementById('mDate').value, startTime: document.getElementById('mStartTime').value, endTime: document.getElementById('mEndTime').value, type: document.getElementById('mType').value, details: document.getElementById('mDetails').value, budget: document.getElementById('mBudget').value, participants: selected.join(', '), note: document.getElementById('mNote').value }; if(!payload.date || !payload.startTime || !payload.endTime) return Swal.fire('แจ้ง', 'กรอกวันที่ เวลาเริ่ม/จบ', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionMeeting input').forEach(inp => inp.value = ''); document.querySelectorAll('.chk-participant').forEach(chk => chk.checked = false); } else { Swal.fire('ผิดพลาด', res.message, 'error'); } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
-        async function saveCar() { const payload = { action: 'saveCar', bookingDate: document.getElementById('cBookingDate').value, pickupTime: document.getElementById('cPickupTime').value, pickupLocation: document.getElementById('cPickupLocation').value, dropoffLocation: document.getElementById('cDropoffLocation').value, who: document.getElementById('cWho').value, pax: document.getElementById('cPax').value, contact: document.getElementById('cContact').value, note: document.getElementById('cNote').value }; if(!payload.bookingDate || !payload.pickupLocation || !payload.dropoffLocation) return Swal.fire('แจ้ง', 'กรอกข้อมูลรับ-ส่งให้ครบ', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionCar input').forEach(inp => { if(inp.type !== 'number') inp.value = ''; }); document.getElementById('cPax').value = 1; } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
+        
+        // บันทึกรถพร้อมรูปภาพ
+        async function saveCar() { 
+            const fileInput = document.getElementById('cImage');
+            let base64Image = null;
+            let fileName = null;
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileName = file.name;
+                base64Image = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const payload = { 
+                action: 'saveCar', 
+                bookingDate: document.getElementById('cBookingDate').value, 
+                pickupTime: document.getElementById('cPickupTime').value, 
+                pickupLocation: document.getElementById('cPickupLocation').value, 
+                dropoffLocation: document.getElementById('cDropoffLocation').value, 
+                who: document.getElementById('cWho').value, 
+                pax: document.getElementById('cPax').value, 
+                contact: document.getElementById('cContact').value, 
+                note: document.getElementById('cNote').value,
+                imageFile: base64Image,
+                imageName: fileName
+            }; 
+            
+            if(!payload.bookingDate || !payload.pickupLocation || !payload.dropoffLocation) return Swal.fire('แจ้ง', 'กรอกข้อมูลรับ-ส่งให้ครบ', 'warning'); 
+            Swal.fire({ title: 'กำลังบันทึกข้อมูล (หากมีรูปภาพอาจใช้เวลาสักครู่)...', didOpen: () => Swal.showLoading() }); 
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); 
+                if(res.success) { 
+                    Swal.fire('สำเร็จ', res.message, 'success'); 
+                    document.querySelectorAll('#sectionCar input').forEach(inp => { if(inp.type !== 'number' && inp.type !== 'file') inp.value = ''; }); 
+                    document.getElementById('cPax').value = 1; 
+                    document.getElementById('cImage').value = '';
+                } 
+            } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } 
+        }
+
         async function saveHotel() { const payload = { action: 'saveHotel', location: document.getElementById('hLocation').value, who: document.getElementById('hWho').value, pax: document.getElementById('hPax').value, checkIn: document.getElementById('hCheckIn').value, checkOut: document.getElementById('hCheckOut').value, contact: document.getElementById('hContact').value, note: document.getElementById('hNote').value }; if(!payload.location || !payload.checkIn || !payload.checkOut) return Swal.fire('แจ้ง', 'เลือกหรือพิมพ์สถานที่และวันเข้าออก', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionHotel input').forEach(inp => { if(inp.type !== 'number') inp.value = ''; }); document.getElementById('hPax').value = 1; } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
 
         function toggleDateInput(prefix) {
@@ -253,6 +295,17 @@
             target.removeChild(titleEl);
         }
 
+        // --- ดูรูปภาพขนาดใหญ่ ---
+        function showLargeImage(url) {
+            Swal.fire({
+                imageUrl: url,
+                imageAlt: 'Attached Image',
+                width: '80%',
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+
         async function loadDashboard() {
             const type = document.getElementById('dbFilterType').value;
             const target = type === 'daily' ? document.getElementById('dbDateTarget').value : document.getElementById('dbMonthTarget').value;
@@ -265,8 +318,12 @@
                     Swal.close();
                     document.getElementById('dashboardResults').innerHTML = ''; 
                     renderDashboardTable('dbMeeting', '📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5, 7], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด', 'ผู้เข้าร่วม'], 'blue');
-                    renderDashboardTable('dbCar', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
-                    renderDashboardTable('dbHotel', '🏨 การจองห้องพัก', res.data.hotel, [1, 2, 5, 6, 3], ['วันที่บันทึก', 'สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก'], 'purple');
+                    
+                    // เพิ่มดัชนีคอลัมน์รูปภาพ (9) ลงไปในตารางรถ
+                    renderDashboardTable('dbCar', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 7, 9], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'ติดต่อ', 'รูปภาพ'], 'green');
+                    
+                    // ห้องพัก ตัดวันที่ออก ดึงเอาจำนวนคน (ดัชนี 4) มาใส่แทน
+                    renderDashboardTable('dbHotel', '🏨 การจองห้องพัก', res.data.hotel, [2, 5, 6, 3, 4], ['สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก', 'จำนวน (คน)'], 'purple');
                 } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
             } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); }
         }
@@ -292,7 +349,17 @@
                         if (idx === 1 || (idPrefix === 'dbHotel' && (idx === 5 || idx === 6))) {
                             cellValue = formatToDMMMYYYY(cellValue);
                         }
-                        html += `<td class="px-4 py-3">${cellValue.substring(0, 300)}</td>`; 
+                        
+                        // ถ้าระบบเจอลิงก์รูปภาพในตารางจองรถ
+                        if (idx === 9 && cellValue.startsWith('http')) {
+                            html += `<td class="px-4 py-2 text-center no-print">
+                                        <img src="${cellValue}" alt="Attach" class="h-10 w-10 object-cover rounded shadow cursor-pointer hover:opacity-75 inline-block" onclick="showLargeImage('${cellValue}')">
+                                     </td>`;
+                        } else if(idx === 9) {
+                            html += `<td class="px-4 py-3 text-gray-400 no-print">-</td>`;
+                        } else {
+                            html += `<td class="px-4 py-3">${cellValue.substring(0, 300)}</td>`; 
+                        }
                     });
                     html += `</tr>`;
                 });
@@ -308,7 +375,6 @@
             const type = document.getElementById('uFilterType').value;
             let target = '';
             
-            // ใช้เงื่อนไขให้ถูกกับการดึงช่อง Input
             if(type === 'monthly') target = document.getElementById('uMonthTarget').value;
             else if(type === 'yearly') target = document.getElementById('uYearTarget').value;
 
@@ -324,8 +390,6 @@
                 }).then(r => r.json());
 
                 if (res.success && res.data.length > 0) {
-                    window.userMeetingData = res.data; 
-                    
                     let groupedData = {};
                     res.data.forEach(m => {
                         m.displayDate = formatToDMMMYYYY(m.date);
@@ -334,7 +398,6 @@
                     });
 
                     let html = '';
-                    let globalIndex = 0;
 
                     for(const [dateKey, meetings] of Object.entries(groupedData)) {
                         html += `<div class="bg-blue-50 text-blue-800 font-bold p-3 text-lg border-y mt-4 first:mt-0">📅 ${dateKey}</div>`;
@@ -347,16 +410,21 @@
                             const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}&ctz=Asia/Bangkok`;
 
                             html += `<div class="p-4 hover:bg-gray-50 border-b flex flex-col">
-                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center no-print">
-                                    <div class="w-full md:w-2/3">
-                                        <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded">
+                                <div class="flex flex-col md:flex-row justify-between items-start no-print">
+                                    <div class="w-full md:w-3/4">
+                                        <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded mb-2">
                                             🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
                                         </p>
-                                        <p class="text-gray-800 mt-2 truncate"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
+                                        <div class="text-gray-800 text-sm space-y-1">
+                                            <p><strong class="text-blue-700">📌 ประเภท:</strong> ${m.type}</p>
+                                            <p><strong class="text-blue-700">📝 รายละเอียด:</strong> ${m.details || '-'}</p>
+                                            <p><strong class="text-blue-700">💰 วงเงิน:</strong> ${m.budget ? Number(m.budget).toLocaleString() + ' บาท' : '-'}</p>
+                                            <p><strong class="text-blue-700">👥 ผู้เข้าร่วม:</strong> ${m.participants || '-'}</p>
+                                            <p><strong class="text-red-600">⚠️ หมายเหตุ:</strong> ${m.note || '-'}</p>
+                                        </div>
                                     </div>
-                                    <div class="mt-4 md:mt-0 w-full md:w-1/3 flex flex-col sm:flex-row gap-2 justify-end">
-                                        <button onclick="viewMeetingDetails(${globalIndex})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔍 ดูข้อมูล</button>
-                                        <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a>
+                                    <div class="mt-4 md:mt-0 w-full md:w-1/4 flex justify-end">
+                                        <a href="${calLink}" target="_blank" class="text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a>
                                     </div>
                                 </div>
                                 
@@ -369,7 +437,6 @@
                                     <p><strong>⚠️ หมายเหตุ:</strong> ${m.note || '-'}</p>
                                 </div>
                             </div>`;
-                            globalIndex++;
                         });
                     }
                     container.innerHTML = html;
@@ -377,24 +444,6 @@
                     container.innerHTML = `<div class="p-8 text-center text-gray-500 bg-gray-50 rounded">ไม่มีนัดหมายการประชุมในช่วงเวลาที่เลือก</div>`; 
                 }
             } catch(e) { container.innerHTML = `<div class="p-8 text-center text-red-500">เกิดข้อผิดพลาดในการดึงข้อมูล</div>`; }
-        }
-
-        function viewMeetingDetails(index) {
-            const m = window.userMeetingData[index];
-            if(!m) return;
-            Swal.fire({
-                title: 'รายละเอียดการประชุม',
-                html: `<div class="text-left text-sm mt-4 bg-gray-50 p-4 rounded-lg border">
-                    <p class="mb-2"><strong class="text-blue-800">📅 วันที่:</strong> ${m.displayDate || formatToDMMMYYYY(m.date)}</p>
-                    <p class="mb-2"><strong class="text-blue-800">🕒 เวลา:</strong> ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}</p>
-                    <p class="mb-2"><strong class="text-blue-800">📌 ประเภท:</strong> ${m.type}</p>
-                    <p class="mb-2"><strong class="text-blue-800">📝 รายละเอียด:</strong> ${m.details || '-'}</p>
-                    <p class="mb-2"><strong class="text-blue-800">💰 วงเงิน:</strong> ${m.budget ? Number(m.budget).toLocaleString() + ' บาท' : '-'}</p>
-                    <p class="mb-2"><strong class="text-blue-800">👥 ผู้เข้าร่วม:</strong> ${m.participants || '-'}</p>
-                    <p class="mb-2"><strong class="text-red-600">⚠️ หมายเหตุ:</strong> ${m.note || '-'}</p>
-                </div>`,
-                confirmButtonText: 'ปิด', confirmButtonColor: '#1e40af'
-            });
         }
     </script>
 </body>
