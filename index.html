@@ -12,13 +12,13 @@
         body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
         .hidden-page { display: none; }
         
-        /* ตั้งค่าตอนกดพิมพ์เอกสาร */
+        /* ระบบซ่อน/แสดงตอนพิมพ์ (Print) */
         @media print {
+            body * { visibility: hidden; }
+            .print-area-active, .print-area-active * { visibility: visible; }
+            .print-area-active { position: absolute; left: 0; top: 0; width: 100%; background: white;}
             .no-print { display: none !important; }
-            body { background-color: white; padding: 0; }
-            .container { max-width: 100%; margin: 0; padding: 0; }
             .shadow, .shadow-md, .shadow-lg { box-shadow: none !important; }
-            .print-border { border: 1px solid #ddd; }
         }
     </style>
 </head>
@@ -38,15 +38,13 @@
             <h2 class="text-2xl font-bold text-center mb-6 text-blue-800">เข้าสู่ระบบ</h2>
             <div class="mb-4">
                 <label class="block text-sm font-semibold mb-2">เบอร์โทรศัพท์</label>
-                <input type="tel" id="loginPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" placeholder="08XXXXXXXX">
+                <input type="tel" id="loginPhone" class="w-full px-4 py-2 border rounded-lg" placeholder="08XXXXXXXX">
             </div>
             <button onclick="login()" class="w-full bg-blue-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition shadow-md">เข้าสู่ระบบ</button>
         </div>
     </div>
 
     <div id="pageAdmin" class="container mx-auto p-4 mt-4 hidden-page max-w-5xl">
-        <h2 class="text-xl font-bold mb-4 no-print">เมนูสำหรับผู้ดูแลระบบ</h2>
-        
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 no-print">
             <button onclick="showSection('sectionMeeting')" class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500 font-semibold text-left">📝 จองประชุม</button>
             <button onclick="showSection('sectionCar')" class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500 font-semibold text-left">🚐 จองรถรับ-ส่ง</button>
@@ -63,7 +61,16 @@
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">ประเภท</label><select id="mType" class="w-full border p-2 rounded"><option>ต่อรองจัดซื้อ</option><option>ต่อรองจัดจ้าง</option><option>พิจารณา TOR จัดซื้อ</option><option>พิจารณา TOR จัดจ้าง</option><option>เปิดซอง</option><option>ตรวจรับ</option><option>ก่อสร้าง</option><option>Board สามัญ</option><option>Board วิสามัญ</option><option>อื่นๆ</option></select></div>
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">รายละเอียด</label><input type="text" id="mDetails" class="w-full border p-2 rounded"></div>
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">วงเงิน (บาท)</label><input type="number" id="mBudget" class="w-full border p-2 rounded"></div>
-                <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">รายชื่อผู้เข้าร่วม</label><div class="h-48 overflow-y-scroll border p-3 rounded text-sm bg-gray-50 grid grid-cols-1 md:grid-cols-2 gap-2" id="participantList"></div></div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">รายชื่อผู้เข้าร่วม (เลือกได้หลายคน)</label>
+                    <div class="h-48 overflow-y-scroll border p-3 rounded text-sm bg-gray-50 grid grid-cols-1 md:grid-cols-2 gap-2 mb-2" id="participantList"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="customName" class="w-full border p-2 rounded text-sm" placeholder="พิมพ์ชื่อบุคคลอื่นเพื่อเพิ่มลงในรายการ...">
+                        <button onclick="addCustomName()" class="bg-blue-600 text-white px-4 rounded font-bold hover:bg-blue-700">+</button>
+                    </div>
+                </div>
+
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">หมายเหตุ</label><input type="text" id="mNote" class="w-full border p-2 rounded"></div>
                 <div class="md:col-span-2 mt-2"><button onclick="saveMeeting()" class="bg-blue-600 text-white p-3 rounded-lg font-bold w-full">บันทึกข้อมูลประชุม</button></div>
             </div>
@@ -78,7 +85,7 @@
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">สถานที่ส่ง</label><input type="text" id="cDropoffLocation" class="w-full border p-2 rounded"></div>
                 <div><label class="block text-sm font-semibold mb-1">ผู้เดินทาง (ใคร)</label><input type="text" id="cWho" class="w-full border p-2 rounded"></div>
                 <div><label class="block text-sm font-semibold mb-1">จำนวนคน</label><input type="number" id="cPax" class="w-full border p-2 rounded" min="1" value="1"></div>
-                <div><label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label><input type="tel" id="cContact" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label><input type="tel" id="cContact" class="w-full border p-2 rounded" placeholder="08XXXXXXXX"></div>
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">หมายเหตุ</label><input type="text" id="cNote" class="w-full border p-2 rounded"></div>
                 <div class="md:col-span-2 mt-2"><button onclick="saveCar()" class="bg-green-600 text-white p-3 rounded-lg font-bold w-full">บันทึกการจองรถ</button></div>
             </div>
@@ -87,36 +94,28 @@
         <div id="sectionHotel" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page border-t-4 border-purple-500 no-print">
             <h3 class="font-bold text-lg mb-4 text-purple-700">🏨 ระบบจองห้องพัก</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="block text-sm font-semibold mb-1">วันที่ทำรายการ</label><input type="date" id="hBookingDate" class="w-full border p-2 rounded"></div>
-                <div><label class="block text-sm font-semibold mb-1">สถานที่พัก</label><select id="hLocation" class="w-full border p-2 rounded"><option value="">-- เลือกสถานที่ --</option><option value="หอพักหมอหลุยส์">หอพักหมอหลุยส์</option><option value="เพิ่มอิสระ">เพิ่มอิสระ</option></select></div>
+                <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">สถานที่พัก</label><select id="hLocation" class="w-full border p-2 rounded"><option value="">-- เลือกสถานที่ --</option><option value="หอพักหมอหลุยส์">หอพักหมอหลุยส์</option><option value="เพิ่มอิสระ">เพิ่มอิสระ</option></select></div>
                 <div><label class="block text-sm font-semibold mb-1">ผู้เข้าพัก (ใคร)</label><input type="text" id="hWho" class="w-full border p-2 rounded"></div>
                 <div><label class="block text-sm font-semibold mb-1">จำนวนคน</label><input type="number" id="hPax" class="w-full border p-2 rounded" min="1" value="1"></div>
                 <div><label class="block text-sm font-semibold mb-1">เช็คอิน (วันเข้า)</label><input type="date" id="hCheckIn" class="w-full border p-2 rounded"></div>
                 <div><label class="block text-sm font-semibold mb-1">เช็คเอาท์ (วันออก)</label><input type="date" id="hCheckOut" class="w-full border p-2 rounded"></div>
-                <div><label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label><input type="tel" id="hContact" class="w-full border p-2 rounded"></div>
+                <div><label class="block text-sm font-semibold mb-1">เบอร์ติดต่อ</label><input type="tel" id="hContact" class="w-full border p-2 rounded" placeholder="08XXXXXXXX"></div>
                 <div class="md:col-span-2"><label class="block text-sm font-semibold mb-1">หมายเหตุ</label><input type="text" id="hNote" class="w-full border p-2 rounded"></div>
                 <div class="md:col-span-2 mt-2"><button onclick="saveHotel()" class="bg-purple-600 text-white p-3 rounded-lg font-bold w-full">บันทึกการจองห้องพัก</button></div>
             </div>
         </div>
 
-        <div id="sectionDashboard" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page print-border">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 no-print">
-                <h3 class="font-bold text-2xl text-blue-800">📊 รายงานสรุปข้อมูล</h3>
-                <div class="flex gap-2 mt-4 sm:mt-0">
-                    <select id="dbFilterType" onchange="toggleDateInput()" class="border p-2 rounded">
-                        <option value="daily">รายวัน</option>
-                        <option value="monthly">รายเดือน</option>
+        <div id="sectionDashboard" class="bg-white p-6 rounded-lg shadow mt-6 hidden-page">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 no-print gap-2">
+                <h3 class="font-bold text-2xl text-blue-800">📊 สรุปข้อมูลแอดมิน</h3>
+                <div class="flex flex-wrap gap-2 justify-end w-full md:w-auto">
+                    <select id="dbFilterType" onchange="toggleDateInput('db')" class="border p-2 rounded text-sm">
+                        <option value="daily">รายวัน</option><option value="monthly">รายเดือน</option>
                     </select>
-                    <input type="date" id="dbDateTarget" class="border p-2 rounded">
-                    <input type="month" id="dbMonthTarget" class="border p-2 rounded hidden-page">
-                    <button onclick="loadDashboard()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">🔍 ค้นหา</button>
-                    <button onclick="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded font-bold">🖨️ พิมพ์</button>
+                    <input type="date" id="dbDateTarget" class="border p-2 rounded text-sm">
+                    <input type="month" id="dbMonthTarget" class="border p-2 rounded text-sm hidden-page">
+                    <button onclick="loadDashboard()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-sm shadow">🔍 ค้นหา</button>
                 </div>
-            </div>
-
-            <div class="hidden print:block text-center mb-6">
-                <h2 class="text-2xl font-bold">รายงานสรุปข้อมูลโรงพยาบาลกรุงเทพคริสเตียน</h2>
-                <p id="printDateHeader" class="text-lg mt-2"></p>
             </div>
 
             <div id="dashboardResults" class="space-y-8">
@@ -125,17 +124,34 @@
         </div>
     </div>
 
-    <div id="pageUser" class="container mx-auto p-4 mt-4 hidden-page max-w-4xl no-print">
-        <h2 class="text-xl font-bold mb-4 text-gray-800 border-l-4 border-blue-800 pl-3">ตารางการประชุมของท่าน</h2>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div id="userSchedule" class="divide-y divide-gray-200">
+    <div id="pageUser" class="container mx-auto p-4 mt-4 hidden-page max-w-4xl">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 no-print gap-4">
+                <h2 class="text-2xl font-bold text-gray-800 border-l-4 border-blue-800 pl-3">ตารางการประชุม</h2>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+                    <select id="uFilterType" onchange="toggleDateInput('u')" class="border p-2 rounded text-sm bg-gray-50">
+                        <option value="daily">รายวัน</option>
+                        <option value="monthly">รายเดือน</option>
+                        <option value="yearly">รายปี</option>
+                    </select>
+                    <input type="date" id="uDateTarget" class="border p-2 rounded text-sm">
+                    <input type="month" id="uMonthTarget" class="border p-2 rounded text-sm hidden-page">
+                    <input type="number" id="uYearTarget" class="border p-2 rounded text-sm hidden-page w-24" placeholder="ปี ค.ศ. (เช่น 2026)">
+                    
+                    <button onclick="triggerUserSearch()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-sm shadow">🔍 ค้นหา</button>
+                    <button onclick="printSpecificArea('userSchedule', 'ตารางการประชุมของท่าน')" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded font-bold text-sm shadow">🖨️ พิมพ์</button>
+                </div>
+            </div>
+
+            <div id="userSchedule" class="overflow-hidden">
                 <div class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>
             </div>
         </div>
     </div>
 
     <script>
-        // *** เปลี่ยน URL ตรงนี้ ***
+        // *** เปลี่ยน URL ตรงนี้ด้วยนะครับ ***
         const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; 
 
         window.userMeetingData = [];
@@ -143,46 +159,204 @@
 
         window.onload = function() {
             renderParticipants();
-            checkLoginStatus();
-            // ตั้งค่าวันที่ปัจจุบันให้ Dashboard
-            document.getElementById('dbDateTarget').valueAsDate = new Date();
             let today = new Date();
-            document.getElementById('dbMonthTarget').value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+            let y = today.getFullYear();
+            let m = String(today.getMonth() + 1).padStart(2, '0');
+            let d = String(today.getDate()).padStart(2, '0');
+            
+            // ตั้งค่าตั้งต้นให้ Input
+            document.getElementById('dbDateTarget').value = `${y}-${m}-${d}`;
+            document.getElementById('dbMonthTarget').value = `${y}-${m}`;
+            document.getElementById('uDateTarget').value = `${y}-${m}-${d}`;
+            document.getElementById('uMonthTarget').value = `${y}-${m}`;
+            document.getElementById('uYearTarget').value = y;
+
+            checkLoginStatus();
         }
 
-        // [ฟังก์ชัน renderParticipants, checkLoginStatus, login, logout, saveMeeting, saveCar, saveHotel เหมือนเดิมทุกประการครับ ผมละไว้เพื่อไม่ให้โค้ดยาวเกินไป]
+        // เพิ่มชื่อผู้เข้าร่วมเอง
+        function addCustomName() {
+            let name = document.getElementById('customName').value.trim();
+            if(!name) return;
+            let list = document.getElementById('participantList');
+            let html = `<label class="flex items-center space-x-2 p-1 hover:bg-blue-50 bg-blue-100 rounded cursor-pointer transition"><input type="checkbox" value="${name}" class="chk-participant rounded text-blue-600 w-4 h-4" checked><span class="text-blue-800 font-semibold">${name} (เพิ่มใหม่)</span></label>`;
+            list.insertAdjacentHTML('afterbegin', html); // เพิ่มไว้บนสุด
+            document.getElementById('customName').value = '';
+        }
+
         function renderParticipants() { const list = document.getElementById('participantList'); let html = ''; defaultParticipants.forEach(name => { html += `<label class="flex items-center space-x-2 p-1 hover:bg-gray-200 rounded cursor-pointer transition"><input type="checkbox" value="${name}" class="chk-participant rounded text-blue-600 w-4 h-4"><span class="text-gray-700">${name}</span></label>`; }); list.innerHTML = html; }
-        function checkLoginStatus() { const userStr = localStorage.getItem('bch_user'); if (userStr) { const user = JSON.parse(userStr); document.getElementById('displayName').innerText = user.name; document.getElementById('displayRole').innerText = user.role; document.getElementById('userInfo').classList.remove('hidden'); document.getElementById('pageLogin').classList.add('hidden-page'); if (user.role === 'admin') { document.getElementById('pageAdmin').classList.remove('hidden-page'); } else { document.getElementById('pageUser').classList.remove('hidden-page'); loadUserMeetings(user.name); } } else { document.getElementById('pageLogin').classList.remove('hidden-page'); document.getElementById('pageAdmin').classList.add('hidden-page'); document.getElementById('pageUser').classList.add('hidden-page'); document.getElementById('userInfo').classList.add('hidden'); } }
+        
+        function checkLoginStatus() { 
+            const userStr = localStorage.getItem('bch_user'); 
+            if (userStr) { 
+                const user = JSON.parse(userStr); 
+                document.getElementById('displayName').innerText = user.name; 
+                document.getElementById('displayRole').innerText = user.role; 
+                document.getElementById('userInfo').classList.remove('hidden'); 
+                document.getElementById('pageLogin').classList.add('hidden-page'); 
+                if (user.role === 'admin') { document.getElementById('pageAdmin').classList.remove('hidden-page'); } 
+                else { 
+                    document.getElementById('pageUser').classList.remove('hidden-page'); 
+                    triggerUserSearch(); // โหลดข้อมูล User ตามค่า Default 
+                } 
+            } else { 
+                document.getElementById('pageLogin').classList.remove('hidden-page'); 
+                document.getElementById('pageAdmin').classList.add('hidden-page'); 
+                document.getElementById('pageUser').classList.add('hidden-page'); 
+                document.getElementById('userInfo').classList.add('hidden'); 
+            } 
+        }
+
         async function login() { const phone = document.getElementById('loginPhone').value; if(!phone) return Swal.fire('แจ้ง', 'กรุณากรอกเบอร์', 'warning'); Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', phone: phone }) }).then(r => r.json()); if (res.success) { localStorage.setItem('bch_user', JSON.stringify(res.data)); Swal.close(); checkLoginStatus(); } else { Swal.fire('ผิดพลาด', res.message, 'error'); } } catch (err) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
         function logout() { localStorage.removeItem('bch_user'); checkLoginStatus(); }
         function showSection(sectionId) { ['sectionMeeting','sectionCar','sectionHotel','sectionDashboard'].forEach(id => document.getElementById(id).classList.add('hidden-page')); document.getElementById(sectionId).classList.remove('hidden-page'); }
 
         async function saveMeeting() { let selected = []; document.querySelectorAll('.chk-participant:checked').forEach(chk => selected.push(chk.value)); const payload = { action: 'saveMeeting', date: document.getElementById('mDate').value, startTime: document.getElementById('mStartTime').value, endTime: document.getElementById('mEndTime').value, type: document.getElementById('mType').value, details: document.getElementById('mDetails').value, budget: document.getElementById('mBudget').value, participants: selected.join(', '), note: document.getElementById('mNote').value }; if(!payload.date || !payload.startTime || !payload.endTime) return Swal.fire('แจ้ง', 'กรอกวันที่ เวลาเริ่ม/จบ', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionMeeting input').forEach(inp => inp.value = ''); document.querySelectorAll('.chk-participant').forEach(chk => chk.checked = false); } else { Swal.fire('ผิดพลาด', res.message, 'error'); } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
         async function saveCar() { const payload = { action: 'saveCar', bookingDate: document.getElementById('cBookingDate').value, pickupTime: document.getElementById('cPickupTime').value, pickupLocation: document.getElementById('cPickupLocation').value, dropoffLocation: document.getElementById('cDropoffLocation').value, who: document.getElementById('cWho').value, pax: document.getElementById('cPax').value, contact: document.getElementById('cContact').value, note: document.getElementById('cNote').value }; if(!payload.bookingDate || !payload.pickupLocation || !payload.dropoffLocation) return Swal.fire('แจ้ง', 'กรอกข้อมูลรับ-ส่งให้ครบ', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionCar input').forEach(inp => { if(inp.type !== 'number') inp.value = ''; }); document.getElementById('cPax').value = 1; } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
-        async function saveHotel() { const payload = { action: 'saveHotel', bookingDate: document.getElementById('hBookingDate').value, location: document.getElementById('hLocation').value, who: document.getElementById('hWho').value, pax: document.getElementById('hPax').value, checkIn: document.getElementById('hCheckIn').value, checkOut: document.getElementById('hCheckOut').value, contact: document.getElementById('hContact').value, note: document.getElementById('hNote').value }; if(!payload.location || !payload.checkIn || !payload.checkOut) return Swal.fire('แจ้ง', 'เลือกสถานที่และวันเข้าออก', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionHotel input, #sectionHotel select').forEach(inp => { if(inp.type !== 'number') inp.value = ''; }); document.getElementById('hPax').value = 1; } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
+        // แก้ไข saveHotel (ไม่มี payload.bookingDate แล้ว)
+        async function saveHotel() { const payload = { action: 'saveHotel', location: document.getElementById('hLocation').value, who: document.getElementById('hWho').value, pax: document.getElementById('hPax').value, checkIn: document.getElementById('hCheckIn').value, checkOut: document.getElementById('hCheckOut').value, contact: document.getElementById('hContact').value, note: document.getElementById('hNote').value }; if(!payload.location || !payload.checkIn || !payload.checkOut) return Swal.fire('แจ้ง', 'เลือกสถานที่และวันเข้าออก', 'warning'); Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); document.querySelectorAll('#sectionHotel input, #sectionHotel select').forEach(inp => { if(inp.type !== 'number') inp.value = ''; }); document.getElementById('hPax').value = 1; } } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } }
 
-        // --- โค้ด User Meetings (ปัญหาเรื่อง 17 นาทีจะหายไปเพราะ Backend ส่งค่าดิบมาแล้ว) ---
-        async function loadUserMeetings(userName) {
-            const container = document.getElementById('userSchedule');
+        // สลับ Date Input
+        function toggleDateInput(prefix) {
+            const type = document.getElementById(prefix + 'FilterType').value;
+            ['DateTarget', 'MonthTarget', 'YearTarget'].forEach(t => {
+                let el = document.getElementById(prefix + t);
+                if(el) el.classList.add('hidden-page');
+            });
+
+            if (type === 'daily') document.getElementById(prefix + 'DateTarget').classList.remove('hidden-page');
+            else if (type === 'monthly') document.getElementById(prefix + 'MonthTarget').classList.remove('hidden-page');
+            else if (type === 'yearly') document.getElementById(prefix + 'YearTarget').classList.remove('hidden-page');
+        }
+
+        // ฟังก์ชันสั่งพิมพ์เฉพาะส่วน (อัจฉริยะ)
+        function printSpecificArea(divId, title = '') {
+            let target = document.getElementById(divId);
+            target.classList.add('print-area-active');
+            
+            // เพิ่ม Title ชั่วคราวตอนพิมพ์
+            let titleEl = document.createElement('h2');
+            titleEl.innerHTML = title;
+            titleEl.className = "text-2xl font-bold mb-4 text-center hidden print:block";
+            target.insertBefore(titleEl, target.firstChild);
+            
+            window.print();
+            
+            target.classList.remove('print-area-active');
+            target.removeChild(titleEl);
+        }
+
+        // --- ระบบดึงข้อมูล Admin Dashboard ---
+        async function loadDashboard() {
+            const type = document.getElementById('dbFilterType').value;
+            const target = type === 'daily' ? document.getElementById('dbDateTarget').value : document.getElementById('dbMonthTarget').value;
+            if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุข้อมูลให้ครบ', 'warning');
+
+            Swal.fire({ title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading() });
             try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getUserMeetings', name: userName }) }).then(r => r.json());
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getDashboardData', filterType: type, targetDate: target }) }).then(r => r.json());
+                if (res.success) {
+                    Swal.close();
+                    document.getElementById('dashboardResults').innerHTML = ''; // เคลียร์ของเก่า
+                    // Car เพิ่ม DropoffLocation (index 6) แล้วเปลี่ยนจาก Who(3) เป็น Dropoff(6) -> จริงๆ ลำดับ Sheet: Date(1), Time(2), PickupLoc(3), Who(4), Pax(5), DropoffLoc(6), Contact(7)
+                    renderDashboardTable('dbMeeting', '📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด'], 'blue');
+                    renderDashboardTable('dbCar', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
+                    // Hotel BookingDate(1), Location(2), CheckIn(5), CheckOut(6), Who(3)
+                    renderDashboardTable('dbHotel', '🏨 การจองห้องพัก', res.data.hotel, [1, 2, 5, 6, 3], ['วันที่บันทึก', 'สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก'], 'purple');
+                } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
+            } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); }
+        }
+
+        function renderDashboardTable(idPrefix, title, dataArray, columnIndices, headers, colorTheme) {
+            const container = document.getElementById('dashboardResults');
+            
+            let html = `<div id="${idPrefix}" class="mb-8 p-4 bg-white rounded-lg border">
+                <div class="flex justify-between items-center border-b-2 border-${colorTheme}-500 mb-3 pb-1 no-print">
+                    <h4 class="font-bold text-lg text-${colorTheme}-700">${title} (รวม ${dataArray.length} รายการ)</h4>
+                    <button onclick="printSpecificArea('${idPrefix}', 'รายงาน: ${title}')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm font-bold shadow-sm">🖨️ พิมพ์</button>
+                </div>`;
+            
+            if(dataArray.length === 0) {
+                html += `<p class="text-gray-500 text-sm italic bg-gray-50 p-4 rounded text-center">ไม่มีข้อมูล</p></div>`;
+            } else {
+                html += `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left"><thead class="bg-${colorTheme}-100 text-${colorTheme}-800"><tr>`;
+                headers.forEach(h => html += `<th class="px-4 py-3 font-semibold border-b">${h}</th>`);
+                html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
+                dataArray.forEach(row => {
+                    html += `<tr class="hover:bg-gray-50">`;
+                    columnIndices.forEach(idx => { html += `<td class="px-4 py-3">${row[idx] ? row[idx].toString().substring(0, 50) : '-'}</td>`; });
+                    html += `</tr>`;
+                });
+                html += `</tbody></table></div></div>`;
+            }
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // --- ระบบ User Meetings (จัดกลุ่มตามวัน, ปุ่มค้นหา, ปุ่มพิมพ์) ---
+        async function triggerUserSearch() {
+            const userStr = localStorage.getItem('bch_user');
+            if(!userStr) return;
+            const userName = JSON.parse(userStr).name;
+            const type = document.getElementById('uFilterType').value;
+            let target = '';
+            if(type === 'daily') target = document.getElementById('uDateTarget').value;
+            else if(type === 'monthly') target = document.getElementById('uMonthTarget').value;
+            else if(type === 'yearly') target = document.getElementById('uYearTarget').value;
+
+            if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุวันที่/เดือน/ปี', 'warning');
+
+            const container = document.getElementById('userSchedule');
+            container.innerHTML = `<div class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>`;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getUserMeetings', name: userName, filterType: type, targetDate: target })
+                }).then(r => r.json());
+
                 if (res.success && res.data.length > 0) {
                     window.userMeetingData = res.data; 
-                    let html = '';
-                    res.data.forEach((m, index) => {
-                        let sTime = m.startTime ? m.startTime.replace(':', '') + '00' : '000000';
-                        let eTime = m.endTime ? m.endTime.replace(':', '') + '00' : sTime;
-                        const startDateTime = m.date.replace(/-/g, '') + 'T' + sTime;
-                        const endDateTime = m.date.replace(/-/g, '') + 'T' + eTime;
-                        const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}&ctz=Asia/Bangkok`;
-
-                        html += `<div class="p-5 hover:bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center border-b">
-                            <div class="w-full md:w-2/3"><p class="font-bold text-blue-800 text-lg mb-1">📅 ${m.date}</p><p class="text-sm font-semibold text-gray-700 bg-gray-100 inline-block px-2 py-1 rounded">🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}</p><p class="text-gray-800 mt-2 truncate"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p></div>
-                            <div class="mt-4 md:mt-0 w-full md:w-1/3 flex flex-col sm:flex-row gap-2 justify-end"><button onclick="viewMeetingDetails(${index})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔍 ดูข้อมูล</button><a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a></div>
-                        </div>`;
+                    
+                    // จัดกลุ่มข้อมูลตามวันที่
+                    let groupedData = {};
+                    res.data.forEach(m => {
+                        if(!groupedData[m.date]) groupedData[m.date] = [];
+                        groupedData[m.date].push(m);
                     });
+
+                    let html = '';
+                    let globalIndex = 0; // ลำดับ Index เดิมอ้างอิงสำหรับการกดปุ่ม "ดูข้อมูล"
+
+                    for(const [dateKey, meetings] of Object.entries(groupedData)) {
+                        // Header วันที่
+                        html += `<div class="bg-blue-50 text-blue-800 font-bold p-3 text-lg border-y mt-4 first:mt-0">📅 ${dateKey}</div>`;
+                        
+                        meetings.forEach((m) => {
+                            let sTime = m.startTime ? m.startTime.replace(':', '') + '00' : '000000';
+                            let eTime = m.endTime ? m.endTime.replace(':', '') + '00' : sTime;
+                            const startDateTime = m.date.replace(/-/g, '') + 'T' + sTime;
+                            const endDateTime = m.date.replace(/-/g, '') + 'T' + eTime;
+                            const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}&ctz=Asia/Bangkok`;
+
+                            html += `<div class="p-5 hover:bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center border-b">
+                                <div class="w-full md:w-2/3">
+                                    <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded">
+                                        🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
+                                    </p>
+                                    <p class="text-gray-800 mt-2 truncate"><span class="font-semibold text-gray-600">ประเภท:</span> ${m.type}</p>
+                                </div>
+                                <div class="mt-4 md:mt-0 w-full md:w-1/3 flex flex-col sm:flex-row gap-2 justify-end no-print">
+                                    <button onclick="viewMeetingDetails(${globalIndex})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔍 ดูข้อมูล</button>
+                                    <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a>
+                                </div>
+                            </div>`;
+                            globalIndex++;
+                        });
+                    }
                     container.innerHTML = html;
-                } else { container.innerHTML = `<div class="p-8 text-center text-gray-500">ไม่มีนัดหมายการประชุมในขณะนี้</div>`; }
+                } else { 
+                    container.innerHTML = `<div class="p-8 text-center text-gray-500 bg-gray-50 rounded">ไม่มีนัดหมายการประชุมในช่วงเวลาที่เลือก</div>`; 
+                }
             } catch(e) { container.innerHTML = `<div class="p-8 text-center text-red-500">เกิดข้อผิดพลาดในการดึงข้อมูล</div>`; }
         }
 
@@ -195,85 +369,6 @@
                 confirmButtonText: 'ปิด', confirmButtonColor: '#1e40af'
             });
         }
-
-        // --- ระบบ Dashboard ---
-        function toggleDateInput() {
-            const type = document.getElementById('dbFilterType').value;
-            if (type === 'daily') {
-                document.getElementById('dbDateTarget').classList.remove('hidden-page');
-                document.getElementById('dbMonthTarget').classList.add('hidden-page');
-            } else {
-                document.getElementById('dbDateTarget').classList.add('hidden-page');
-                document.getElementById('dbMonthTarget').classList.remove('hidden-page');
-            }
-        }
-
-        async function loadDashboard() {
-            const type = document.getElementById('dbFilterType').value;
-            const target = type === 'daily' ? document.getElementById('dbDateTarget').value : document.getElementById('dbMonthTarget').value;
-            
-            if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุวันที่หรือเดือนที่ต้องการดูรายงาน', 'warning');
-        
-        // อัปเดตหัวข้อตอน Print
-        document.getElementById('printDateHeader').innerText = `ประจำ${type === 'daily' ? 'วัน' : 'เดือน'}ที่: ${target}`;
-
-        Swal.fire({ title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading() });
-
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'getDashboardData', filterType: type, targetDate: target })
-            }).then(r => r.json());
-
-            if (res.success) {
-                Swal.close();
-                
-                // เรียกฟังก์ชันสร้างตาราง โดยระบุลำดับคอลัมน์ที่ต้องการแสดง (เริ่มนับ 0 จากคอลัมน์ Timestamp)
-                // Meeting ต้องการ: Date(1), StartTime(2), EndTime(3), Type(4), Details(5)
-                renderDashboardTable('📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด'], 'blue');
-                
-                // Car ต้องการ: BookingDate(1), PickupTime(2), PickupLocation(3), Who(4), Contact(7)
-                renderDashboardTable('🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
-                
-                // Hotel ต้องการ: BookingDate(1), Location(2), CheckIn(5), CheckOut(6), Who(3)
-                renderDashboardTable('🏨 การจองห้องพัก', res.data.hotel, [1, 2, 5, 6, 3], ['วันที่จอง', 'สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก'], 'purple');
-            } else { 
-                Swal.fire('ผิดพลาด', res.message, 'error'); 
-            }
-        } catch(e) { 
-            Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error'); 
-        }
-    }
-
-    function renderDashboardTable(title, dataArray, columnIndices, headers, colorTheme) {
-        const container = document.getElementById('dashboardResults');
-        if(container.innerHTML.includes("กรุณาเลือกวันที่")) container.innerHTML = ''; // ล้างข้อความตั้งต้น
-
-        let html = `<div class="mb-8"><h4 class="font-bold text-lg text-${colorTheme}-700 border-b-2 border-${colorTheme}-500 mb-3 pb-1">${title} (รวม ${dataArray.length} รายการ)</h4>`;
-        
-        if(dataArray.length === 0) {
-            html += `<p class="text-gray-500 text-sm italic bg-gray-50 p-4 rounded text-center">ไม่มีข้อมูลในวัน/เดือน ที่เลือก</p></div>`;
-        } else {
-            html += `<div class="overflow-x-auto shadow-sm rounded-lg"><table class="min-w-full text-sm text-left bg-white"><thead class="bg-${colorTheme}-100 text-${colorTheme}-800"><tr>`;
-            headers.forEach(h => html += `<th class="px-4 py-3 font-semibold border-b border-${colorTheme}-200">${h}</th>`);
-            html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
-            
-            // วนลูปดึงข้อมูลตามลำดับ Index (Array แบบตัวเลข) แทนการใช้ชื่อ Header
-            dataArray.forEach(row => {
-                html += `<tr class="hover:bg-gray-50">`;
-                columnIndices.forEach(idx => {
-                    let cellValue = row[idx] ? row[idx].toString().substring(0, 50) : '-'; // ตัดข้อความถ้ามันยาวเกินไป
-                    html += `<td class="px-4 py-3">${cellValue}</td>`;
-                });
-                html += `</tr>`;
-            });
-            html += `</tbody></table></div></div>`;
-        }
-        
-        // ถ้าตารางเป็นตารางแรก ให้แทนที่ ถ้าเป็นตารางถัดไปให้ต่อท้าย
-        if (title.includes("ประชุม")) container.innerHTML = html;
-        else container.insertAdjacentHTML('beforeend', html);
-    }
     </script>
 </body>
 </html>
