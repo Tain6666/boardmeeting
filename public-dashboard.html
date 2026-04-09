@@ -12,7 +12,6 @@
         body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
         .hidden-page { display: none !important; }
         
-        /* ตั้งค่าการพิมพ์ */
         @media print {
             body * { visibility: hidden; }
             .print-area-active, .print-area-active * { visibility: visible; }
@@ -28,7 +27,6 @@
     <nav class="bg-gray-900 text-white p-4 shadow-md sticky top-0 z-50 no-print">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="font-bold text-xl tracking-wide">🏥 BCH Dashboards</div>
-            
             <div class="flex gap-2 bg-gray-800 p-1 rounded-lg">
                 <button onclick="switchTab('car')" id="tab-car" class="px-6 py-2 rounded-md text-sm font-bold transition-all bg-green-500 text-white shadow-sm">
                     🚐 การจองรถรับ-ส่ง
@@ -41,17 +39,17 @@
     </nav>
 
     <div class="container mx-auto p-4 mt-6 max-w-5xl">
-        
         <div class="bg-white p-5 rounded-lg shadow-md mb-6 no-print flex flex-col md:flex-row justify-between items-center gap-4">
             <h2 id="pageTitle" class="text-2xl font-bold text-green-700 border-l-4 border-green-500 pl-3">สรุปการจองรถรับ-ส่ง</h2>
             
             <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
                 <select id="filterType" onchange="toggleDateInput()" class="border border-gray-300 p-2 rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-gray-400">
+                    <option value="all">ดูแบบ ทั้งหมด</option>
                     <option value="daily">ดูแบบ รายวัน</option>
                     <option value="monthly">ดูแบบ รายเดือน</option>
                 </select>
                 
-                <input type="date" id="dateTarget" class="border border-gray-300 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-gray-400">
+                <input type="date" id="dateTarget" class="border border-gray-300 p-2 rounded-lg text-sm hidden-page outline-none focus:ring-2 focus:ring-gray-400">
                 <input type="month" id="monthTarget" class="border border-gray-300 p-2 rounded-lg text-sm hidden-page outline-none focus:ring-2 focus:ring-gray-400">
                 
                 <button onclick="fetchDashboardData()" class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow transition">🔍 ค้นหา</button>
@@ -60,20 +58,17 @@
 
         <div id="dashboardResults" class="space-y-8 min-h-[300px]">
             <div class="flex justify-center items-center h-full text-gray-400 mt-20">
-                <p class="text-lg italic">กรุณาเลือกวันที่และกดปุ่ม "ค้นหา" เพื่อแสดงข้อมูล</p>
+                <p class="text-lg italic">กำลังโหลดข้อมูล...</p>
             </div>
         </div>
-
     </div>
 
     <script>
         // *** นำ URL WEB APP ของคุณมาใส่ที่นี่ ***
         const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; 
 
-        // ตัวแปรเก็บสถานะว่าอยู่หน้าไหน ('car' หรือ 'hotel')
         let currentTab = 'car';
 
-        // ฟังก์ชันแปลงวันที่ให้เป็น DD MMM YYYY
         function formatToDMMMYYYY(dateStr) {
             if (!dateStr) return '-';
             let d = new Date(dateStr);
@@ -88,25 +83,24 @@
             return dateStr;
         }
 
-        // เริ่มต้นการทำงานเมื่อโหลดหน้าเว็บเสร็จ
         window.onload = function() {
             let today = new Date();
             let y = today.getFullYear();
             let m = String(today.getMonth() + 1).padStart(2, '0');
             let d = String(today.getDate()).padStart(2, '0');
             
-            // ตั้งค่าวันที่เริ่มต้นเป็นวันนี้
             document.getElementById('dateTarget').value = `${y}-${m}-${d}`;
             document.getElementById('monthTarget').value = `${y}-${m}`;
             
-            // สั่งโหลดข้อมูลเริ่มต้นทันที (สำหรับแท็บรถรับส่ง)
+            // ตั้งค่าเริ่มต้นเป็น "ทั้งหมด"
+            document.getElementById('filterType').value = 'all';
+            toggleDateInput();
+            
             fetchDashboardData();
         }
 
-        // ระบบสลับแท็บ
         function switchTab(tab) {
             currentTab = tab;
-            
             const btnCar = document.getElementById('tab-car');
             const btnHotel = document.getElementById('tab-hotel');
             const pageTitle = document.getElementById('pageTitle');
@@ -123,24 +117,25 @@
                 pageTitle.className = "text-2xl font-bold text-purple-700 border-l-4 border-purple-600 pl-3";
             }
 
-            // เมื่อสลับแท็บ ให้ล้างตารางเดิม และโหลดข้อมูลใหม่ทันที
             document.getElementById('dashboardResults').innerHTML = `<div class="flex justify-center items-center mt-20 text-gray-400"><p class="text-lg italic">กำลังโหลดข้อมูล...</p></div>`;
             fetchDashboardData();
         }
 
-        // ระบบสลับ Input วันที่/เดือน
         function toggleDateInput() {
             const type = document.getElementById('filterType').value;
             if (type === 'daily') {
                 document.getElementById('dateTarget').classList.remove('hidden-page');
                 document.getElementById('monthTarget').classList.add('hidden-page');
-            } else {
+            } else if (type === 'monthly') {
                 document.getElementById('dateTarget').classList.add('hidden-page');
                 document.getElementById('monthTarget').classList.remove('hidden-page');
+            } else {
+                // ถ้าเลือก 'all' ให้ซ่อนทั้งคู่
+                document.getElementById('dateTarget').classList.add('hidden-page');
+                document.getElementById('monthTarget').classList.add('hidden-page');
             }
         }
 
-        // ระบบสั่งพิมพ์
         function printSpecificArea(divId, title = '') {
             let target = document.getElementById(divId);
             target.classList.add('print-area-active');
@@ -149,11 +144,13 @@
             header.className = "text-center hidden print:block mb-6";
             
             const type = document.getElementById('filterType').value;
-            const targetDate = type === 'daily' ? document.getElementById('dateTarget').value : document.getElementById('monthTarget').value;
+            let targetDateText = "ข้อมูลทั้งหมด";
+            if (type === 'daily') targetDateText = "ประจำวันที่: " + document.getElementById('dateTarget').value;
+            if (type === 'monthly') targetDateText = "ประจำเดือนที่: " + document.getElementById('monthTarget').value;
             
             header.innerHTML = `
                 <h2 class="text-2xl font-bold">${title}</h2>
-                <p class="text-lg mt-2 text-gray-600">ประจำ${type === 'daily' ? 'วัน' : 'เดือน'}ที่: ${targetDate}</p>
+                <p class="text-lg mt-2 text-gray-600">${targetDateText}</p>
             `;
             
             target.insertBefore(header, target.firstChild);
@@ -163,7 +160,6 @@
             target.removeChild(header);
         }
 
-        // โชว์รูปใหญ่
         function showLargeImage(url) {
             Swal.fire({
                 imageUrl: url,
@@ -174,12 +170,13 @@
             });
         }
 
-        // ดึงข้อมูลจาก API
         async function fetchDashboardData() {
             const type = document.getElementById('filterType').value;
-            const target = type === 'daily' ? document.getElementById('dateTarget').value : document.getElementById('monthTarget').value;
+            let target = '';
+            if (type === 'daily') target = document.getElementById('dateTarget').value;
+            if (type === 'monthly') target = document.getElementById('monthTarget').value;
             
-            if(!target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุข้อมูลให้ครบ', 'warning');
+            if(type !== 'all' && !target) return Swal.fire('แจ้งเตือน', 'กรุณาระบุข้อมูลวันที่ให้ครบ', 'warning');
 
             Swal.fire({ title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
 
@@ -193,7 +190,6 @@
                     Swal.close();
                     document.getElementById('dashboardResults').innerHTML = ''; 
                     
-                    // เลือกเรนเดอร์ข้อมูลตามแท็บปัจจุบัน
                     if (currentTab === 'car') {
                         renderTable('printArea', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
                     } else if (currentTab === 'hotel') {
@@ -208,7 +204,6 @@
             }
         }
 
-        // สร้างตาราง
         function renderTable(idPrefix, title, dataArray, columnIndices, headers, colorTheme) {
             const container = document.getElementById('dashboardResults');
             
@@ -229,7 +224,6 @@
                     html += `<tr class="hover:bg-gray-50 transition">`;
                     columnIndices.forEach(idx => { 
                         let cellValue = row[idx] ? row[idx].toString() : '-';
-                        // แปลงฟอร์แมตวันที่สำหรับคอลัมน์ที่เป็นวัน
                         if (idx === 1 || (currentTab === 'hotel' && (idx === 5 || idx === 6))) {
                             cellValue = formatToDMMMYYYY(cellValue);
                         }
@@ -237,7 +231,6 @@
                     });
                     html += `</tr>`;
 
-                    // สำหรับตารางจองรถ ตรวจสอบรูปภาพที่คอลัมน์ 9
                     if (currentTab === 'car' && row[9] && row[9].toString().startsWith('http')) {
                         html += `<tr>
                             <td colspan="${columnIndices.length}" class="p-0 border-b border-gray-300 bg-gray-100">
