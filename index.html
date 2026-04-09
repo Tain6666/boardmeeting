@@ -11,13 +11,14 @@
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
         .hidden-page { display: none; }
+        
         @media print {
             body * { visibility: hidden; }
             .print-area-active, .print-area-active * { visibility: visible; }
             .print-area-active { position: absolute; left: 0; top: 0; width: 100%; background: white;}
             .no-print { display: none !important; }
             .shadow, .shadow-md, .shadow-lg { box-shadow: none !important; }
-            /* ป้องกันไม่ให้แถวตารางและรูปภาพถูกตัดขาดครึ่งหน้ากระดาษตอนพิมพ์ */
+            /* ป้องกันการตัดขาดครึ่งเวลาพิมพ์ */
             tr, img { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
@@ -133,8 +134,7 @@
                 <h2 class="text-2xl font-bold text-gray-800 border-l-4 border-blue-800 pl-3">ตารางการประชุม</h2>
                 <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
                     <select id="uFilterType" onchange="toggleDateInput('u')" class="border p-2 rounded text-sm bg-gray-50">
-                        <option value="yearly">รายปี</option>
-                        <option value="monthly">รายเดือน</option>
+                        <option value="yearly">รายปี</option><option value="monthly">รายเดือน</option>
                     </select>
                     <input type="month" id="uMonthTarget" class="border p-2 rounded text-sm hidden-page">
                     <input type="number" id="uYearTarget" class="border p-2 rounded text-sm w-24" placeholder="ปี ค.ศ.">
@@ -143,7 +143,6 @@
                     <button onclick="printSpecificArea('userSchedule', 'ตารางการประชุมของท่าน')" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded font-bold text-sm shadow">🖨️ พิมพ์</button>
                 </div>
             </div>
-
             <div id="userSchedule" class="overflow-hidden">
                 <div class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>
             </div>
@@ -151,13 +150,18 @@
     </div>
 
     <script>
-        // *** ใส่ URL ของ Web App ตรงนี้ ***
+        // *** เปลี่ยน URL ตรงนี้ด้วยนะครับ ***
         const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; 
+
+        window.userMeetingData = [];
+        // สร้างตัวแปรเก็บข้อมูลตารางไว้ทำ Popup
+        window.dashboardDataTemp = {};
+        window.dashboardColMap = {};
 
         const defaultParticipants = [ "คุณพงศธร คุณานุสรณ์", "ศจ.ดร.เสมอใจ ศรีมาลา", "ผป.วิชัย จิตรถเวช", "นายโซวัน โล", "ผป.บุญชัย เด่นสกุล", "คุณอภิศักดิ์ ก้องกังวาฬโชค", "ผป.นพ.เอกลาภ ทองบริสุทธิ์", "นพ.ชูศักดิ์ วงศ์สุรีย์", "นพ.ยุทธศักดิ์ วงศ์สุรีย์", "นพ.ยุคลพรรษ สกุลกัน", "ภญ.สิริพร กัลชาญพิเศษ", "นางเกตุแก้ว หวัง", "นายปิยะ นันตาฤทธานนท์", "นางรัชนี โสรัจจวัฒน์", "นายศุภชัย อรุณรักถาวร" ];
 
         function formatToDMMMYYYY(dateStr) {
-            if (!dateStr) return '-';
+            if (!dateStr || dateStr === '-') return '-';
             let d = new Date(dateStr);
             if (isNaN(d.getTime())) {
                 let parts = dateStr.split('/');
@@ -208,10 +212,7 @@
                 document.getElementById('userInfo').classList.remove('hidden'); 
                 document.getElementById('pageLogin').classList.add('hidden-page'); 
                 if (user.role === 'admin') { document.getElementById('pageAdmin').classList.remove('hidden-page'); } 
-                else { 
-                    document.getElementById('pageUser').classList.remove('hidden-page'); 
-                    triggerUserSearch(); 
-                } 
+                else { document.getElementById('pageUser').classList.remove('hidden-page'); triggerUserSearch(); } 
             } else { 
                 document.getElementById('pageLogin').classList.remove('hidden-page'); 
                 document.getElementById('pageAdmin').classList.add('hidden-page'); 
@@ -228,42 +229,24 @@
         
         async function saveCar() { 
             const fileInput = document.getElementById('cImage');
-            let base64Image = null;
-            let fileName = null;
-
+            let base64Image = null; let fileName = null;
             if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileName = file.name;
+                const file = fileInput.files[0]; fileName = file.name;
                 base64Image = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
+                    const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(file);
                 });
             }
-
             const payload = { 
-                action: 'saveCar', 
-                bookingDate: document.getElementById('cBookingDate').value, 
-                pickupTime: document.getElementById('cPickupTime').value, 
-                pickupLocation: document.getElementById('cPickupLocation').value, 
-                dropoffLocation: document.getElementById('cDropoffLocation').value, 
-                who: document.getElementById('cWho').value, 
-                pax: document.getElementById('cPax').value, 
-                contact: document.getElementById('cContact').value, 
-                note: document.getElementById('cNote').value,
-                imageFile: base64Image,
-                imageName: fileName
+                action: 'saveCar', bookingDate: document.getElementById('cBookingDate').value, pickupTime: document.getElementById('cPickupTime').value, pickupLocation: document.getElementById('cPickupLocation').value, dropoffLocation: document.getElementById('cDropoffLocation').value, who: document.getElementById('cWho').value, pax: document.getElementById('cPax').value, contact: document.getElementById('cContact').value, note: document.getElementById('cNote').value, imageFile: base64Image, imageName: fileName
             }; 
-            
             if(!payload.bookingDate || !payload.pickupLocation || !payload.dropoffLocation) return Swal.fire('แจ้ง', 'กรอกข้อมูลรับ-ส่งให้ครบ', 'warning'); 
-            Swal.fire({ title: 'กำลังบันทึกข้อมูล (หากมีรูปภาพอาจใช้เวลาสักครู่)...', didOpen: () => Swal.showLoading() }); 
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() }); 
             try { 
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()); 
                 if(res.success) { 
                     Swal.fire('สำเร็จ', res.message, 'success'); 
                     document.querySelectorAll('#sectionCar input').forEach(inp => { if(inp.type !== 'number' && inp.type !== 'file') inp.value = ''; }); 
-                    document.getElementById('cPax').value = 1; 
-                    document.getElementById('cImage').value = '';
+                    document.getElementById('cPax').value = 1; document.getElementById('cImage').value = '';
                 } 
             } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); } 
         }
@@ -272,14 +255,8 @@
 
         function toggleDateInput(prefix) {
             const type = document.getElementById(prefix + 'FilterType').value;
-            ['DateTarget', 'MonthTarget', 'YearTarget'].forEach(t => {
-                let el = document.getElementById(prefix + t);
-                if(el) el.classList.add('hidden-page');
-            });
-            if (type === 'daily') {
-                let d = document.getElementById(prefix + 'DateTarget');
-                if(d) d.classList.remove('hidden-page');
-            }
+            ['DateTarget', 'MonthTarget', 'YearTarget'].forEach(t => { let el = document.getElementById(prefix + t); if(el) el.classList.add('hidden-page'); });
+            if (type === 'daily') { let d = document.getElementById(prefix + 'DateTarget'); if(d) d.classList.remove('hidden-page'); }
             else if (type === 'monthly') document.getElementById(prefix + 'MonthTarget').classList.remove('hidden-page');
             else if (type === 'yearly') document.getElementById(prefix + 'YearTarget').classList.remove('hidden-page');
         }
@@ -297,13 +274,25 @@
         }
 
         function showLargeImage(url) {
-            Swal.fire({
-                imageUrl: url,
-                imageAlt: 'Attached Image',
-                width: '80%',
-                showConfirmButton: false,
-                showCloseButton: true
+            Swal.fire({ imageUrl: url, imageAlt: 'Attached Image', width: '80%', showConfirmButton: false, showCloseButton: true });
+        }
+
+        // --- ดูรายละเอียดเมื่อกดบนมือถือ (Admin Dashboard) ---
+        function showRowDetails(idPrefix, rowIndex, title) {
+            const row = window.dashboardDataTemp[idPrefix][rowIndex];
+            const colMap = window.dashboardColMap[idPrefix];
+
+            let html = '<div class="text-left text-sm mt-2 bg-gray-50 p-4 rounded-lg border space-y-2">';
+            colMap.indices.forEach((idx, i) => {
+                let val = row[idx] ? row[idx].toString() : '-';
+                if (idx === 1 || (idPrefix === 'dbHotel' && (idx === 5 || idx === 6))) val = formatToDMMMYYYY(val);
+                if (idPrefix === 'dbMeeting' && idx === 6 && val !== '-') val = Number(val).toLocaleString() + ' บาท';
+                
+                html += `<p><strong class="text-gray-800">${colMap.headers[i]}:</strong> <span class="text-gray-600">${val}</span></p>`;
             });
+            html += '</div>';
+
+            Swal.fire({ title: title, html: html, confirmButtonText: 'ปิด', confirmButtonColor: '#1f2937' });
         }
 
         async function loadDashboard() {
@@ -317,54 +306,94 @@
                 if (res.success) {
                     Swal.close();
                     document.getElementById('dashboardResults').innerHTML = ''; 
-                    renderDashboardTable('dbMeeting', '📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5, 7], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด', 'ผู้เข้าร่วม'], 'blue');
                     
-                    // สำหรับ Car เราส่ง [1, 2, 3, 6, 4, 7] เป็นหลักเพื่อแสดงตาราง ส่วนรูปภาพ (ดัชนี 9) เราจะเขียนเงื่อนไขให้ลงไปอยู่บรรทัดล่างสุด
-                    renderDashboardTable('dbCar', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 7], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'ติดต่อ'], 'green');
+                    // Meeting: เพิ่ม 8 (หมายเหตุ)
+                    renderDashboardTable('dbMeeting', '📝 การนัดประชุม', res.data.meeting, [1, 2, 3, 4, 5, 6, 7, 8], ['วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'ประเภท', 'รายละเอียด', 'วงเงิน', 'ผู้เข้าร่วม', 'หมายเหตุ'], 'blue');
                     
-                    renderDashboardTable('dbHotel', '🏨 การจองห้องพัก', res.data.hotel, [2, 5, 6, 3, 4], ['สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก', 'จำนวน (คน)'], 'purple');
+                    // Car: เพิ่ม 5 (จำนวนคน), 8 (หมายเหตุ) ให้แสดงครบตอนพิมพ์
+                    renderDashboardTable('dbCar', '🚐 การจองรถรับ-ส่ง', res.data.car, [1, 2, 3, 6, 4, 5, 7, 8], ['วันที่', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'จำนวนคน', 'ติดต่อ', 'หมายเหตุ'], 'green');
+                    
+                    // Hotel: เพิ่ม 7 (เบอร์โทร), 8 (หมายเหตุ) ให้แสดงครบตอนพิมพ์
+                    renderDashboardTable('dbHotel', '🏨 การจองห้องพัก', res.data.hotel, [2, 5, 6, 3, 4, 7, 8], ['สถานที่พัก', 'วันเข้า', 'วันออก', 'ผู้เข้าพัก', 'จำนวนคน', 'เบอร์โทร', 'หมายเหตุ'], 'purple');
                 } else { Swal.fire('ผิดพลาด', res.message, 'error'); }
             } catch(e) { Swal.fire('ผิดพลาด', 'เชื่อมต่อไม่ได้', 'error'); }
         }
 
+        // ระบบตารางแอดมิน ที่ซ่อนคอลัมน์บนมือถือ แต่โชว์หมดตอน Print
         function renderDashboardTable(idPrefix, title, dataArray, columnIndices, headers, colorTheme) {
             const container = document.getElementById('dashboardResults');
             let html = `<div id="${idPrefix}" class="mb-8 p-4 bg-white rounded-lg border">
-                <div class="flex justify-between items-center border-b-2 border-${colorTheme}-500 mb-3 pb-1 no-print">
-                    <h4 class="font-bold text-lg text-${colorTheme}-700">${title} (รวม ${dataArray.length} รายการ)</h4>
+                <div class="flex justify-between items-center border-b-2 border-${colorTheme}-500 mb-2 pb-1 no-print">
+                    <h4 class="font-bold text-lg text-${colorTheme}-700">${title} <span class="text-gray-500 text-sm font-normal">(รวม ${dataArray.length} รายการ)</span></h4>
                     <button onclick="printSpecificArea('${idPrefix}', 'รายงาน: ${title}')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm font-bold shadow-sm">🖨️ พิมพ์</button>
-                </div>`;
+                </div>
+                <p class="text-xs text-gray-400 mb-2 no-print lg:hidden">💡 แตะที่รายการเพื่อดูรายละเอียดทั้งหมด</p>`;
             
             if(dataArray.length === 0) {
                 html += `<p class="text-gray-500 text-sm italic bg-gray-50 p-4 rounded text-center">ไม่มีข้อมูล</p></div>`;
-            } else {
-                html += `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left"><thead class="bg-${colorTheme}-100 text-${colorTheme}-800"><tr>`;
-                headers.forEach(h => html += `<th class="px-4 py-3 font-semibold border-b">${h}</th>`);
-                html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
-                
-                dataArray.forEach(row => {
-                    html += `<tr class="hover:bg-gray-50">`;
-                    columnIndices.forEach(idx => { 
-                        let cellValue = row[idx] ? row[idx].toString() : '-';
-                        if (idx === 1 || (idPrefix === 'dbHotel' && (idx === 5 || idx === 6))) {
-                            cellValue = formatToDMMMYYYY(cellValue);
-                        }
-                        html += `<td class="px-4 py-3 border-b">${cellValue.substring(0, 300)}</td>`; 
-                    });
-                    html += `</tr>`;
-
-                    // หากเป็นระบบรถ (dbCar) และมีรูปภาพ (Index 9) ให้แทรกบรรทัดรูปภาพต่อท้ายแถวนั้น
-                    if (idPrefix === 'dbCar' && row[9] && row[9].toString().startsWith('http')) {
-                        html += `<tr>
-                            <td colspan="${columnIndices.length}" class="p-0 border-b border-gray-300 bg-gray-50">
-                                <img src="${row[9]}" alt="Car Attach" class="w-full object-contain max-h-[400px] cursor-pointer" onclick="showLargeImage('${row[9]}')">
-                            </td>
-                        </tr>`;
-                    }
-                });
-                html += `</tbody></table></div></div>`;
+                container.insertAdjacentHTML('beforeend', html);
+                return;
             }
+
+            // เก็บข้อมูลไว้ทำ Popup ย่อขยาย
+            window.dashboardColMap[idPrefix] = { indices: columnIndices, headers: headers };
+            window.dashboardDataTemp[idPrefix] = dataArray;
+
+            html += `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left"><thead class="bg-${colorTheme}-100 text-${colorTheme}-800"><tr>`;
+            
+            // วนลูปสร้าง Header (คอลัมน์ที่ 4 เป็นต้นไป จะถูกซ่อนบนจอมือถือ แต่แสดงตอนพิมพ์)
+            headers.forEach((h, i) => {
+                let visibilityClass = i >= 3 ? 'hidden lg:table-cell print:table-cell' : 'table-cell';
+                html += `<th class="px-3 py-3 font-semibold border-b ${visibilityClass}">${h}</th>`;
+            });
+            html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
+            
+            dataArray.forEach((row, rowIndex) => {
+                // เพิ่ม event onclick เพื่อกดดูรายละเอียด
+                html += `<tr class="hover:bg-${colorTheme}-50 cursor-pointer transition" onclick="showRowDetails('${idPrefix}', ${rowIndex}, '${title}')">`;
+                
+                columnIndices.forEach((idx, i) => { 
+                    let cellValue = row[idx] ? row[idx].toString() : '-';
+                    if (idx === 1 || (idPrefix === 'dbHotel' && (idx === 5 || idx === 6))) cellValue = formatToDMMMYYYY(cellValue);
+                    if (idPrefix === 'dbMeeting' && idx === 6 && cellValue !== '-') cellValue = Number(cellValue).toLocaleString();
+                    
+                    let visibilityClass = i >= 3 ? 'hidden lg:table-cell print:table-cell' : 'table-cell';
+                    html += `<td class="px-3 py-3 border-b border-gray-100 ${visibilityClass}">${cellValue.substring(0, 100)}${cellValue.length > 100 ? '...' : ''}</td>`; 
+                });
+                html += `</tr>`;
+
+                // จัดการรูปภาพ (คอลัมน์ 9 ของการจองรถ) ให้อยู่แถวใหม่
+                if (idPrefix === 'dbCar' && row[9] && row[9].toString().startsWith('http')) {
+                    html += `<tr>
+                        <td colspan="${columnIndices.length}" class="p-0 border-b border-gray-300 bg-gray-50">
+                            <img src="${row[9]}" alt="Car Attach" class="w-full object-contain max-h-[400px] cursor-pointer no-print" onclick="showLargeImage('${row[9]}'); event.stopPropagation();">
+                            <img src="${row[9]}" alt="Car Attach" class="w-full object-contain hidden print:block">
+                        </td>
+                    </tr>`;
+                }
+            });
+            html += `</tbody></table></div></div>`;
             container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // --- ส่วน User Dashboard ---
+        function downloadICS(title, rawDate, startTime, endTime, details) {
+            let d = new Date(rawDate);
+            if (isNaN(d.getTime())) { let parts = rawDate.split('/'); if (parts.length === 3) d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); }
+            if (isNaN(d.getTime())) d = new Date();
+
+            let yyyy = d.getFullYear(); let mm = String(d.getMonth() + 1).padStart(2, '0'); let dd = String(d.getDate()).padStart(2, '0');
+            let sTime = startTime ? startTime.replace(':', '') + '00' : '000000';
+            let eTime = endTime ? endTime.replace(':', '') + '00' : sTime;
+
+            let dtStart = `${yyyy}${mm}${dd}T${sTime}`; let dtEnd = `${yyyy}${mm}${dd}T${eTime}`;
+            let icsMSG = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//BCH Management//TH\nBEGIN:VEVENT\n";
+            icsMSG += "DTSTART;TZID=Asia/Bangkok:" + dtStart + "\nDTEND;TZID=Asia/Bangkok:" + dtEnd + "\n";
+            icsMSG += "SUMMARY:" + title + "\nDESCRIPTION:" + details.replace(/\n/g, '\\n') + "\nEND:VEVENT\nEND:VCALENDAR";
+
+            let blob = new Blob([icsMSG], { type: 'text/calendar;charset=utf-8' });
+            let url = window.URL.createObjectURL(blob); let a = document.createElement('a');
+            a.href = url; a.download = 'Meeting_BCH.ics'; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); document.body.removeChild(a);
         }
 
         async function triggerUserSearch() {
@@ -383,48 +412,41 @@
             container.innerHTML = `<div class="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>`;
 
             try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'getUserMeetings', name: userName, filterType: type, targetDate: target })
-                }).then(r => r.json());
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getUserMeetings', name: userName, filterType: type, targetDate: target }) }).then(r => r.json());
 
                 if (res.success && res.data.length > 0) {
                     window.userMeetingData = res.data; 
-                    
                     let groupedData = {};
-                    res.data.forEach(m => {
-                        m.displayDate = formatToDMMMYYYY(m.date);
-                        if(!groupedData[m.displayDate]) groupedData[m.displayDate] = [];
-                        groupedData[m.displayDate].push(m);
-                    });
+                    res.data.forEach(m => { m.displayDate = formatToDMMMYYYY(m.date); if(!groupedData[m.displayDate]) groupedData[m.displayDate] = []; groupedData[m.displayDate].push(m); });
 
-                    let html = '';
-                    let globalIndex = 0;
+                    let html = ''; let globalIndex = 0;
 
                     for(const [dateKey, meetings] of Object.entries(groupedData)) {
                         html += `<div class="bg-blue-50 text-blue-800 font-bold p-3 text-lg border-y mt-4 first:mt-0">📅 ${dateKey}</div>`;
                         
                         meetings.forEach((m) => {
-                            let sTime = m.startTime ? m.startTime.replace(':', '') + '00' : '000000';
-                            let eTime = m.endTime ? m.endTime.replace(':', '') + '00' : sTime;
-                            const startDateTime = m.date.replace(/-/g, '') + 'T' + sTime;
-                            const endDateTime = m.date.replace(/-/g, '') + 'T' + eTime;
+                            let sTime = m.startTime ? m.startTime.replace(':', '') + '00' : '000000'; let eTime = m.endTime ? m.endTime.replace(':', '') + '00' : sTime;
+                            let dObj = new Date(m.date); if(isNaN(dObj.getTime())) { let p = m.date.split('/'); if(p.length === 3) dObj = new Date(`${p[2]}-${p[1]}-${p[0]}`); } if(isNaN(dObj.getTime())) dObj = new Date();
+                            let fYMD = `${dObj.getFullYear()}${String(dObj.getMonth()+1).padStart(2,'0')}${String(dObj.getDate()).padStart(2,'0')}`;
+                            
+                            const startDateTime = fYMD + 'T' + sTime; const endDateTime = fYMD + 'T' + eTime;
                             const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('ประชุม ' + m.type)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(m.details + '\nหมายเหตุ: ' + m.note)}&ctz=Asia/Bangkok`;
+                            const icsDetails = `${m.details || '-'}\nวงเงิน: ${m.budget ? Number(m.budget).toLocaleString() + ' บาท' : '-'}\nผู้เข้าร่วม: ${m.participants || '-'}\nหมายเหตุ: ${m.note || '-'}`;
 
                             html += `<div class="p-4 hover:bg-gray-50 border-b flex flex-col">
                                 <div class="flex flex-col md:flex-row justify-between items-start no-print">
                                     <div class="w-full md:w-3/4">
-                                        <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded mb-2">
-                                            🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}
-                                        </p>
+                                        <p class="text-sm font-semibold text-gray-700 bg-gray-200 inline-block px-2 py-1 rounded mb-2">🕒 ${m.startTime} น. - ${m.endTime ? m.endTime + ' น.' : 'ไม่ระบุ'}</p>
                                         <div class="text-gray-800 text-sm space-y-1">
                                             <p><strong class="text-blue-700">📌 ประเภท:</strong> ${m.type}</p>
                                             <p><strong class="text-blue-700">📝 รายละเอียด:</strong> ${m.details || '-'}</p>
                                         </div>
                                     </div>
-                                    <div class="mt-4 md:mt-0 w-full md:w-1/4 flex flex-col sm:flex-row gap-2 justify-end">
+                                    
+                                    <div class="mt-4 md:mt-0 w-full md:w-auto flex flex-col sm:flex-row gap-2 justify-end">
                                         <button onclick="viewMeetingDetails(${globalIndex})" class="w-full sm:w-auto text-center bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔍 ดูข้อมูล</button>
-                                        <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">+ ปฏิทิน</a>
+                                        <button onclick="downloadICS('ประชุม ${m.type}', '${m.date}', '${m.startTime}', '${m.endTime}', '${icsDetails}')" class="w-full sm:w-auto text-center bg-gray-100 border border-gray-300 text-gray-800 hover:bg-gray-200 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🍏 Apple/Outlook</button>
+                                        <a href="${calLink}" target="_blank" class="w-full sm:w-auto text-center bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition">🔵 Google</a>
                                     </div>
                                 </div>
                                 
@@ -441,9 +463,7 @@
                         });
                     }
                     container.innerHTML = html;
-                } else { 
-                    container.innerHTML = `<div class="p-8 text-center text-gray-500 bg-gray-50 rounded">ไม่มีนัดหมายการประชุมในช่วงเวลาที่เลือก</div>`; 
-                }
+                } else { container.innerHTML = `<div class="p-8 text-center text-gray-500 bg-gray-50 rounded">ไม่มีนัดหมายการประชุมในช่วงเวลาที่เลือก</div>`; }
             } catch(e) { container.innerHTML = `<div class="p-8 text-center text-red-500">เกิดข้อผิดพลาดในการดึงข้อมูล</div>`; }
         }
 
@@ -451,7 +471,6 @@
             const m = window.userMeetingData[index];
             if(!m) return;
             
-            // เช็คว่ามีวงเงินหรือไม่ ถ้ามีให้สร้าง HTML ไว้
             let budgetHtml = m.budget ? `<p class="mb-2"><strong class="text-blue-800">💰 วงเงิน:</strong> ${Number(m.budget).toLocaleString()} บาท</p>` : '';
 
             Swal.fire({
