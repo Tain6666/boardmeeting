@@ -15,6 +15,7 @@
             .no-print { display: none !important; }
             body { background-color: white; }
             .print-area { width: 100%; border: none !important; box-shadow: none !important; }
+            /* ป้องกันการตัดขาดครึ่งเวลาพิมพ์ */
             tr, img { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
@@ -49,7 +50,7 @@
                 <input type="date" id="dateTarget" class="border p-2 rounded-lg text-sm hidden-page outline-none focus:ring-2 focus:ring-blue-400">
                 <input type="month" id="monthTarget" class="border p-2 rounded-lg text-sm hidden-page outline-none focus:ring-2 focus:ring-blue-400">
                 
-                <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-sm transition">🔍 ดึงข้อมูล</button>
+                <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-sm transition">🔍 ค้นหา</button>
                 <button onclick="window.print()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-bold text-sm shadow-sm transition">🖨️ พิมพ์</button>
             </div>
         </div>
@@ -71,46 +72,38 @@
 
     <script>
         // ==========================================
-        // 🛠️ ส่วนตั้งค่า (เปลี่ยนตามไฟล์ที่ต้องการ)
+        // 🛠️ ส่วนตั้งค่า (แก้ไขตรงนี้)
         // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbzSUxpY-Kv73916tdWRRgwI9qMqfPURWp2qbaou8vgEHk_fr3ekfIBk6dRz0BCcZPzoAQ/exec"; // <--- ใส่ URL Web App ของคุณ
         
-        // เลือกประเภทของหน้า: 'meeting', 'car', หรือ 'hotel'
-        // หากสร้างไฟล์จองรถ ให้แก้เป็น 'car' / หากห้องพัก ให้แก้เป็น 'hotel'
+        // เลือกประเภท: 'meeting', 'car', หรือ 'hotel'
         const PAGE_TYPE = 'car'; 
         // ==========================================
 
+        window.dashboardDataTemp = [];
+        window.dashboardColMap = {};
+
         const config = {
             meeting: {
-                title: "สรุปการนัดประชุมกรรมการ",
-                icon: "📝",
-                color: "bg-blue-800",
-                accent: "text-blue-800",
-                indices: [1, 2, 3, 4, 5, 6, 7], // Date, Start, End, Type, Detail, Budget, Participants
-                headers: ['วันที่', 'เริ่ม', 'จบ', 'ประเภท', 'รายละเอียด', 'วงเงิน (บาท)', 'ผู้เข้าร่วม']
+                title: "สรุปการนัดประชุมกรรมการ", icon: "📝", color: "bg-blue-800", accent: "text-blue-800",
+                indices: [1, 2, 3, 4, 5, 6, 7, 8],
+                headers: ['วันที่', 'เริ่ม', 'จบ', 'ประเภท', 'รายละเอียด', 'วงเงิน (บาท)', 'ผู้เข้าร่วม', 'หมายเหตุ']
             },
             car: {
-                title: "สรุปการจองรถรับ-ส่ง",
-                icon: "🚐",
-                color: "bg-green-700",
-                accent: "text-green-700",
-                indices: [1, 2, 3, 6, 4, 7], // BookingDate, Time, Pickup, Dropoff, Who, Contact
-                headers: ['วันที่ใช้รถ', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'เบอร์ติดต่อ']
+                title: "สรุปการจองรถรับ-ส่ง", icon: "🚐", color: "bg-green-700", accent: "text-green-700",
+                indices: [1, 2, 3, 6, 4, 5, 7, 8],
+                headers: ['วันที่ใช้รถ', 'เวลารับ', 'สถานที่รับ', 'สถานที่ส่ง', 'ผู้เดินทาง', 'จำนวนคน', 'เบอร์ติดต่อ', 'หมายเหตุ']
             },
             hotel: {
-                title: "สรุปการจองห้องพัก",
-                icon: "🏨",
-                color: "bg-purple-700",
-                accent: "text-purple-700",
-                indices: [2, 5, 6, 3, 4], // Location, In, Out, Who, Pax
-                headers: ['สถานที่พัก', 'วันเข้าพัก', 'วันออก', 'ผู้เข้าพัก', 'จำนวนคน']
+                title: "สรุปการจองห้องพัก", icon: "🏨", color: "bg-purple-700", accent: "text-purple-700",
+                indices: [2, 5, 6, 3, 4, 7, 8], 
+                headers: ['สถานที่พัก', 'วันเข้าพัก', 'วันออก', 'ผู้เข้าพัก', 'จำนวนคน', 'เบอร์ติดต่อ', 'หมายเหตุ']
             }
         };
 
         const current = config[PAGE_TYPE];
 
         window.onload = function() {
-            // ตั้งค่า UI ตาม Page Type
             document.title = current.title;
             document.getElementById('navTitle').innerText = current.title;
             document.getElementById('navIcon').innerText = current.icon;
@@ -120,8 +113,12 @@
             document.getElementById('printTitle').innerText = current.title;
 
             let today = new Date();
-            document.getElementById('dateTarget').value = today.toISOString().split('T')[0];
-            document.getElementById('monthTarget').value = today.toISOString().slice(0, 7);
+            let y = today.getFullYear();
+            let m = String(today.getMonth() + 1).padStart(2, '0');
+            let d = String(today.getDate()).padStart(2, '0');
+
+            document.getElementById('dateTarget').value = `${y}-${m}-${d}`;
+            document.getElementById('monthTarget').value = `${y}-${m}`;
             
             fetchData();
         }
@@ -148,13 +145,33 @@
             else if (type === 'monthly') document.getElementById('monthTarget').classList.remove('hidden-page');
         }
 
+        function showLargeImage(url) {
+            Swal.fire({ imageUrl: url, imageAlt: 'Attached Image', width: '80%', showConfirmButton: false, showCloseButton: true });
+        }
+
+        function showRowDetails(rowIndex) {
+            const row = window.dashboardDataTemp[rowIndex];
+            const colMap = window.dashboardColMap;
+
+            let html = '<div class="text-left text-sm mt-2 bg-gray-50 p-4 rounded-lg border space-y-2">';
+            colMap.indices.forEach((idx, i) => {
+                let val = row[idx] ? row[idx].toString() : '-';
+                if (idx === 1 || (PAGE_TYPE === 'hotel' && (idx === 5 || idx === 6))) val = formatToDMMMYYYY(val);
+                if (PAGE_TYPE === 'meeting' && idx === 6 && val !== '-') val = Number(val).toLocaleString() + ' บาท';
+                
+                html += `<p><strong class="text-gray-800">${colMap.headers[i]}:</strong> <span class="text-gray-600">${val}</span></p>`;
+            });
+            html += '</div>';
+
+            Swal.fire({ title: current.title, html: html, confirmButtonText: 'ปิด', confirmButtonColor: '#1f2937' });
+        }
+
         async function fetchData() {
             const fType = document.getElementById('filterType').value;
             let target = '';
             if (fType === 'daily') target = document.getElementById('dateTarget').value;
             if (fType === 'monthly') target = document.getElementById('monthTarget').value;
             
-            // อัปเดต Subtitle ตอนพิมพ์
             let subText = "ข้อมูลทั้งหมด";
             if(fType === 'daily') subText = "ประจำวันที่: " + formatToDMMMYYYY(target);
             if(fType === 'monthly') subText = "ประจำเดือน: " + target;
@@ -171,6 +188,8 @@
                 if (res.success) {
                     Swal.close();
                     renderTable(res.data[PAGE_TYPE]);
+                } else {
+                    Swal.fire('ผิดพลาด', res.message, 'error');
                 }
             } catch(e) { Swal.fire('Error', 'ไม่สามารถเชื่อมต่อข้อมูลได้', 'error'); }
         }
@@ -182,31 +201,43 @@
                 return;
             }
 
-            let html = `<div class="overflow-x-auto"><table class="min-w-full text-sm text-left">
-                <thead class="bg-gray-50 text-gray-700 uppercase font-bold border-b"><tr>`;
-            current.headers.forEach(h => html += `<th class="px-5 py-4">${h}</th>`);
-            html += `</tr></thead><tbody class="divide-y divide-gray-100">`;
+            window.dashboardColMap = { indices: current.indices, headers: current.headers };
+            window.dashboardDataTemp = dataArray;
 
-            dataArray.forEach(row => {
-                html += `<tr class="hover:bg-gray-50 transition">`;
-                current.indices.forEach(idx => {
-                    let val = row[idx] || '-';
-                    // แปลงรูปแบบวันที่ถ้าเป็นคอลัมน์วันที่
+            let html = `
+            <div class="p-4 bg-gray-50 border-b no-print lg:hidden text-center text-sm text-gray-500">
+                💡 แตะที่รายการเพื่อดูรายละเอียดทั้งหมด
+            </div>
+            <div class="overflow-x-auto"><table class="min-w-full text-sm text-left">
+                <thead class="bg-gray-100 text-gray-700 font-bold border-b"><tr>`;
+            
+            current.headers.forEach((h, i) => {
+                // ซ่อนคอลัมน์ที่ 4 เป็นต้นไปในจอมือถือ แต่แสดงตอนพิมพ์
+                let visibilityClass = i >= 3 ? 'hidden lg:table-cell print:table-cell' : 'table-cell';
+                html += `<th class="px-5 py-4 ${visibilityClass}">${h}</th>`;
+            });
+            html += `</tr></thead><tbody class="divide-y divide-gray-200">`;
+
+            dataArray.forEach((row, rowIndex) => {
+                html += `<tr class="hover:bg-blue-50 cursor-pointer transition" onclick="showRowDetails(${rowIndex})">`;
+                current.indices.forEach((idx, i) => {
+                    let val = row[idx] ? row[idx].toString() : '-';
                     if (idx === 1 || (PAGE_TYPE === 'hotel' && (idx === 5 || idx === 6))) val = formatToDMMMYYYY(val);
-                    // ซ่อนวงเงินถ้าไม่มีค่า
-                    if (PAGE_TYPE === 'meeting' && idx === 6 && (!val || val === '-')) val = '';
+                    if (PAGE_TYPE === 'meeting' && idx === 6 && val !== '-') val = Number(val).toLocaleString();
                     
-                    html += `<td class="px-5 py-4 text-gray-700">${val}</td>`;
+                    let visibilityClass = i >= 3 ? 'hidden lg:table-cell print:table-cell' : 'table-cell';
+                    html += `<td class="px-5 py-4 text-gray-700 ${visibilityClass}">${val.substring(0, 100)}${val.length > 100 ? '...' : ''}</td>`;
                 });
                 html += `</tr>`;
 
-                // ถ้าระบบรถ และมีรูปภาพ (คอลัมน์ 9)
-                if (PAGE_TYPE === 'car' && row[9] && row[9].startsWith('http')) {
-                    html += `<tr class="bg-gray-50"><td colspan="${current.headers.length}" class="p-4">
-                        <div class="flex justify-center">
-                            <img src="${row[9]}" class="max-h-[350px] rounded shadow-sm border border-white cursor-pointer" onclick="window.open('${row[9]}','_blank')">
-                        </div>
-                    </td></tr>`;
+                // จัดการรูปภาพของรถ
+                if (PAGE_TYPE === 'car' && row[9] && row[9].toString().startsWith('http')) {
+                    html += `<tr>
+                        <td colspan="${current.headers.length}" class="p-0 border-b border-gray-300 bg-gray-50">
+                            <img src="${row[9]}" alt="Car Attach" class="w-full object-contain max-h-[400px] cursor-pointer no-print" onclick="showLargeImage('${row[9]}'); event.stopPropagation();">
+                            <img src="${row[9]}" alt="Car Attach" class="w-full object-contain hidden print:block">
+                        </td>
+                    </tr>`;
                 }
             });
 
